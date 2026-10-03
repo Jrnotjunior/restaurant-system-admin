@@ -81,6 +81,8 @@ function App() {
   const [ownerName, setOwnerName] = useState('');
   const [ownerUserId, setOwnerUserId] = useState('');
   const [ownerError, setOwnerError] = useState('');
+  const [pendingAssignOwner, setPendingAssignOwner] = useState(false);
+  const [pendingRemoveOwner, setPendingRemoveOwner] = useState(false);
 
   async function checkAdminSession() {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -343,6 +345,7 @@ function App() {
     setOwnerName(owner?.full_name ?? '');
     setOwnerUserId(owner?.user_id ?? '');
     setOwnerSaving(false);
+    setPendingAssignOwner(false);
   }
 
   async function removeOwner() {
@@ -356,6 +359,7 @@ function App() {
       setOwnerEmail('');
       setOwnerName('');
       setOwnerUserId('');
+      setPendingRemoveOwner(false);
     }
     setOwnerSaving(false);
   }
@@ -674,12 +678,12 @@ function App() {
                   <div className="owner-current">
                     <div className="owner-avatar">{(ownerName || ownerEmail).charAt(0).toUpperCase()}</div>
                     <div className="owner-current-details"><strong>{ownerName || 'Restaurant Owner'}</strong><span>{ownerEmail}</span><small>User ID: {ownerUserId}</small></div>
-                    <button className="danger-button" onClick={() => void removeOwner()} disabled={ownerSaving}>Remove owner</button>
+                    <button className="danger-button" onClick={() => { setOwnerError(''); setPendingRemoveOwner(true); }} disabled={ownerSaving}>Remove owner</button>
                   </div>
                 ) : (
                   <div className="owner-form">
                     <label>Owner account email<input type="email" value={ownerEmail} onChange={(event) => setOwnerEmail(event.target.value)} placeholder="owner@example.com" /></label>
-                    <button onClick={() => void assignOwner()} disabled={ownerSaving || !ownerEmail.trim()}>{ownerSaving ? 'Assigning...' : 'Assign owner'}</button>
+                    <button onClick={() => { setOwnerError(''); setPendingAssignOwner(true); }} disabled={ownerSaving || !ownerEmail.trim()}>Assign owner</button>
                   </div>
                 )}
                 {ownerError && <div className="error-banner">{ownerError}</div>}
@@ -896,6 +900,58 @@ function App() {
                   >
                     {settingsSaving ? 'Saving...' : 'Confirm & Save'}
                   </button>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {pendingAssignOwner && (
+            <div className="modal-backdrop owner-confirm-backdrop" role="presentation">
+              <section className="modal-card owner-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="assign-owner-title">
+                <div className="modal-heading">
+                  <div>
+                    <div className="eyebrow">Assign Owner</div>
+                    <h2 id="assign-owner-title">Assign this owner?</h2>
+                  </div>
+                  <button className="icon-button" type="button" onClick={() => setPendingAssignOwner(false)} disabled={ownerSaving} aria-label="Close">×</button>
+                </div>
+                <div className="owner-confirm-content">
+                  <p>You are about to assign <strong>{ownerEmail.trim()}</strong> as the owner of <strong>{selectedRestaurant.name}</strong>.</p>
+                  <div className="owner-confirm-warning">
+                    <strong>This will change the restaurant's owner account.</strong>
+                    <span>The existing Supabase account will be used. No new Auth account will be created.</span>
+                  </div>
+                  {ownerError && <div className="error-banner">{ownerError}</div>}
+                </div>
+                <div className="modal-actions">
+                  <button type="button" className="secondary-button" onClick={() => setPendingAssignOwner(false)} disabled={ownerSaving}>Cancel</button>
+                  <button type="button" onClick={() => void assignOwner()} disabled={ownerSaving}>{ownerSaving ? 'Assigning...' : 'Confirm & Assign'}</button>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {pendingRemoveOwner && (
+            <div className="modal-backdrop owner-confirm-backdrop" role="presentation">
+              <section className="modal-card owner-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="remove-owner-title">
+                <div className="modal-heading">
+                  <div>
+                    <div className="eyebrow">Remove Owner</div>
+                    <h2 id="remove-owner-title">Remove this owner?</h2>
+                  </div>
+                  <button className="icon-button" type="button" onClick={() => setPendingRemoveOwner(false)} disabled={ownerSaving} aria-label="Close">×</button>
+                </div>
+                <div className="owner-confirm-content">
+                  <p>You are about to remove <strong>{ownerEmail || ownerName || 'the current owner'}</strong> as the owner of <strong>{selectedRestaurant.name}</strong>.</p>
+                  <div className="owner-confirm-warning">
+                    <strong>This only removes the restaurant owner assignment.</strong>
+                    <span>The Supabase Auth account will not be deleted.</span>
+                  </div>
+                  {ownerError && <div className="error-banner">{ownerError}</div>}
+                </div>
+                <div className="modal-actions">
+                  <button type="button" className="secondary-button" onClick={() => setPendingRemoveOwner(false)} disabled={ownerSaving}>Cancel</button>
+                  <button type="button" className="danger-button" onClick={() => void removeOwner()} disabled={ownerSaving}>{ownerSaving ? 'Removing...' : 'Confirm & Remove'}</button>
                 </div>
               </section>
             </div>
