@@ -4,6 +4,7 @@ import { supabase } from './lib/supabase';
 type Restaurant = {
   id: string;
   owner_id: string | null;
+  custom_domain: string | null;
   slug: string;
   name: string;
   tagline: string;
@@ -54,7 +55,11 @@ function App() {
   const [form, setForm] = useState<RestaurantForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
-  const [manageTab, setManageTab] = useState<'overview' | 'owner'>('overview');
+  const [manageTab, setManageTab] = useState<'overview' | 'owner' | 'domain'>('overview');
+  const [domain, setDomain] = useState('');
+  const [domainLoading, setDomainLoading] = useState(false);
+  const [domainSaving, setDomainSaving] = useState(false);
+  const [domainError, setDomainError] = useState('');
   const [ownerLoading, setOwnerLoading] = useState(false);
   const [ownerSaving, setOwnerSaving] = useState(false);
   const [ownerEmail, setOwnerEmail] = useState('');
@@ -148,6 +153,22 @@ function App() {
     await supabase.auth.signOut();
   }
 
+  async function saveDomain() {
+    if (!selectedRestaurant) return;
+    setDomainSaving(true);
+    setDomainError('');
+    const { data, error } = await supabase.rpc('system_admin_set_restaurant_domain', {
+      p_restaurant_id: selectedRestaurant.id,
+      p_custom_domain: domain.trim(),
+    });
+    if (error) {
+      setDomainError(error.message);
+    } else {
+      setDomain(typeof data === 'string' ? data : domain.trim().toLowerCase());
+    }
+    setDomainSaving(false);
+  }
+
   async function loadRestaurantOwner(restaurantId: string) {
     setOwnerLoading(true);
     setOwnerError('');
@@ -207,7 +228,7 @@ function App() {
 
     const { data, error } = await supabase
       .from('restaurants')
-      .select('id,owner_id,slug,name,tagline,logo_url,location_text,contact_number,email,is_active,created_at,updated_at')
+      .select('id,owner_id,custom_domain,slug,name,tagline,logo_url,location_text,contact_number,email,is_active,created_at,updated_at')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -288,6 +309,8 @@ function App() {
     setOwnerName('');
     setOwnerUserId('');
     setOwnerError('');
+    setDomain('');
+    setDomainError('');
     setRestaurantError('');
   }
 
@@ -456,7 +479,7 @@ function App() {
           <nav className="manage-tabs" aria-label="Restaurant management sections">
             <button className={`manage-tab ${manageTab === 'overview' ? 'active' : ''}`} type="button" onClick={() => setManageTab('overview')}>Overview</button>
             <button className={`manage-tab ${manageTab === 'owner' ? 'active' : ''}`} type="button" onClick={() => { setManageTab('owner'); void loadRestaurantOwner(selectedRestaurant.id); }}>Owner</button>
-            <button className="manage-tab" type="button" disabled>Domain</button>
+            <button className={`manage-tab ${manageTab === 'domain' ? 'active' : ''}`} type="button" onClick={() => { setManageTab('domain'); setDomain(selectedRestaurant.custom_domain ?? ''); setDomainError(''); }}>Domain</button>
             <button className="manage-tab" type="button" disabled>Settings</button>
             <button className="manage-tab" type="button" disabled>Staff</button>
           </nav>
@@ -486,7 +509,7 @@ function App() {
                 </div>
                 <button className={selectedRestaurant.is_active ? 'danger-button' : 'secondary-button'} onClick={async () => {
                   await toggleRestaurant(selectedRestaurant);
-                  const { data } = await supabase.from('restaurants').select('id,owner_id,slug,name,tagline,logo_url,location_text,contact_number,email,is_active,created_at,updated_at').eq('id', selectedRestaurant.id).single();
+                  const { data } = await supabase.from('restaurants').select('id,owner_id,custom_domain,slug,name,tagline,logo_url,location_text,contact_number,email,is_active,created_at,updated_at').eq('id', selectedRestaurant.id).single();
                   if (data) setSelectedRestaurant(data as Restaurant);
                 }}>
                   {selectedRestaurant.is_active ? 'Deactivate restaurant' : 'Activate restaurant'}
@@ -502,7 +525,7 @@ function App() {
               </div>
             </div>
           </div>
-          ) : (
+          ) : manageTab === 'owner' ? (
             <div className="manage-overview">
               <div className="overview-section">
                 <div className="eyebrow">Restaurant Owner</div>
@@ -521,6 +544,20 @@ function App() {
                   </div>
                 )}
                 {ownerError && <div className="error-banner">{ownerError}</div>}
+              </div>
+            </div>
+          ) : (
+            <div className="manage-overview">
+              <div className="overview-section">
+                <div className="eyebrow">Custom Domain</div>
+                <h3>Restaurant domain</h3>
+                <p>Assign the public domain that will identify this restaurant on the ordering platform.</p>
+                <div className="domain-form">
+                  <label>Domain<input value={domain} onChange={(event) => setDomain(event.target.value)} placeholder="restaurant.com" /></label>
+                  <button onClick={() => void saveDomain()} disabled={domainSaving}>{domainSaving ? 'Saving...' : 'Save domain'}</button>
+                </div>
+                <div className="domain-help">Enter only the hostname, for example <strong>restaurant.com</strong>. Do not include https:// or a path.</div>
+                {domainError && <div className="error-banner">{domainError}</div>}
               </div>
             </div>
           )}
