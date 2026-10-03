@@ -59,7 +59,6 @@ function App() {
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsError, setSettingsError] = useState('');
-  const [shippingFee, setShippingFee] = useState('0.00');
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
   const [automaticRiderAssignmentEnabled, setAutomaticRiderAssignmentEnabled] = useState(false);
   const [domain, setDomain] = useState('');
@@ -171,7 +170,6 @@ function App() {
       setSettingsError(error.message);
     } else {
       const settings = Array.isArray(data) ? data[0] : data;
-      setShippingFee(Number(settings?.shipping_fee ?? 0).toFixed(2));
       setCashOnDeliveryEnabled(settings?.cash_on_delivery_enabled ?? true);
       setAutomaticRiderAssignmentEnabled(settings?.automatic_rider_assignment_enabled ?? false);
     }
@@ -182,18 +180,11 @@ function App() {
   async function saveRestaurantSettings() {
     if (!selectedRestaurant) return;
 
-    const parsedShippingFee = Number(shippingFee);
-    if (!Number.isFinite(parsedShippingFee) || parsedShippingFee < 0) {
-      setSettingsError('Shipping fee must be zero or greater.');
-      return;
-    }
-
     setSettingsSaving(true);
     setSettingsError('');
 
     const { data, error } = await supabase.rpc('system_admin_update_restaurant_settings', {
       p_restaurant_id: selectedRestaurant.id,
-      p_shipping_fee: parsedShippingFee,
       p_cash_on_delivery_enabled: cashOnDeliveryEnabled,
       p_automatic_rider_assignment_enabled: automaticRiderAssignmentEnabled,
     });
@@ -202,7 +193,6 @@ function App() {
       setSettingsError(error.message);
     } else {
       const settings = Array.isArray(data) ? data[0] : data;
-      setShippingFee(Number(settings?.shipping_fee ?? parsedShippingFee).toFixed(2));
       setCashOnDeliveryEnabled(settings?.cash_on_delivery_enabled ?? cashOnDeliveryEnabled);
       setAutomaticRiderAssignmentEnabled(settings?.automatic_rider_assignment_enabled ?? automaticRiderAssignmentEnabled);
     }
@@ -623,25 +613,13 @@ function App() {
               <div className="overview-section">
                 <div className="eyebrow">Restaurant Settings</div>
                 <h3>Operational controls</h3>
-                <p>These controls use the restaurant's existing platform settings. Changes made here apply to this restaurant.</p>
+                <p>These are platform-controlled workflow switches. Restaurant owners can view their status, but only the System Administrator can change them.</p>
 
                 {settingsLoading ? (
                   <div className="empty-state">Loading settings...</div>
                 ) : (
                   <>
                     <div className="detail-grid">
-                      <div className="detail-item">
-                        <span>Default shipping fee</span>
-                        <label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={shippingFee}
-                            onChange={(event) => setShippingFee(event.target.value)}
-                          />
-                        </label>
-                      </div>
                       <div className="detail-item">
                         <span>Cash on Delivery</span>
                         <label className="checkbox-row">
