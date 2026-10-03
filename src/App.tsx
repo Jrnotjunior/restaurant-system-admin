@@ -52,6 +52,7 @@ function App() {
   const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(null);
   const [form, setForm] = useState<RestaurantForm>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
 
   async function checkAdminSession() {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -176,6 +177,15 @@ function App() {
     );
   }, [restaurants, search]);
 
+  function openRestaurant(restaurant: Restaurant) {
+    setSelectedRestaurant(restaurant);
+    setRestaurantError('');
+  }
+
+  function closeRestaurant() {
+    setSelectedRestaurant(null);
+  }
+
   function startCreate() {
     setEditingRestaurant(null);
     setForm(emptyForm);
@@ -297,6 +307,96 @@ function App() {
     );
   }
 
+  if (selectedRestaurant) {
+    return (
+      <main className="admin-shell">
+        <header className="admin-header">
+          <div className="brand-block">
+            <img className="company-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
+            <div>
+              <div className="eyebrow">WEB2TABLE Platform</div>
+              <h1>System Admin</h1>
+            </div>
+          </div>
+          <button className="secondary-button" onClick={signOut}>Sign out</button>
+        </header>
+
+        <button className="back-button" onClick={closeRestaurant}>← Back to restaurants</button>
+
+        <section className="dashboard-card restaurant-manage-card">
+          <div className="restaurant-manage-hero">
+            <div className="restaurant-hero-main">
+              <div className="restaurant-hero-logo">
+                {selectedRestaurant.logo_url ? (
+                  <img src={selectedRestaurant.logo_url} alt="" />
+                ) : (
+                  <span>{selectedRestaurant.name.charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <div>
+                <div className="eyebrow">Restaurant Management</div>
+                <h2>{selectedRestaurant.name}</h2>
+                <div className="restaurant-slug">/{selectedRestaurant.slug}</div>
+              </div>
+            </div>
+            <span className={selectedRestaurant.is_active ? 'status active' : 'status inactive'}>
+              {selectedRestaurant.is_active ? 'Active' : 'Inactive'}
+            </span>
+          </div>
+
+          <nav className="manage-tabs" aria-label="Restaurant management sections">
+            <button className="manage-tab active" type="button">Overview</button>
+            <button className="manage-tab" type="button" disabled>Owner</button>
+            <button className="manage-tab" type="button" disabled>Domain</button>
+            <button className="manage-tab" type="button" disabled>Settings</button>
+            <button className="manage-tab" type="button" disabled>Staff</button>
+          </nav>
+
+          <div className="manage-overview">
+            <div className="overview-section">
+              <div className="eyebrow">Restaurant Information</div>
+              <h3>Basic details</h3>
+              <div className="detail-grid">
+                <div className="detail-item"><span>Restaurant name</span><strong>{selectedRestaurant.name}</strong></div>
+                <div className="detail-item"><span>Slug</span><strong>/{selectedRestaurant.slug}</strong></div>
+                <div className="detail-item"><span>Tagline</span><strong>{selectedRestaurant.tagline || '—'}</strong></div>
+                <div className="detail-item"><span>Location</span><strong>{selectedRestaurant.location_text || '—'}</strong></div>
+                <div className="detail-item"><span>Contact number</span><strong>{selectedRestaurant.contact_number || '—'}</strong></div>
+                <div className="detail-item"><span>Email</span><strong>{selectedRestaurant.email || '—'}</strong></div>
+              </div>
+            </div>
+
+            <div className="overview-section">
+              <div className="eyebrow">Platform Status</div>
+              <h3>Restaurant access</h3>
+              <div className="status-panel">
+                <div>
+                  <strong>{selectedRestaurant.is_active ? 'Restaurant is active' : 'Restaurant is inactive'}</strong>
+                  <span>{selectedRestaurant.is_active ? 'Customers can access this restaurant.' : 'Customers cannot access this restaurant while inactive.'}</span>
+                </div>
+                <button className={selectedRestaurant.is_active ? 'danger-button' : 'secondary-button'} onClick={async () => {
+                  await toggleRestaurant(selectedRestaurant);
+                  const { data } = await supabase.from('restaurants').select('id,slug,name,tagline,logo_url,location_text,contact_number,email,is_active,created_at,updated_at').eq('id', selectedRestaurant.id).single();
+                  if (data) setSelectedRestaurant(data as Restaurant);
+                }}>
+                  {selectedRestaurant.is_active ? 'Deactivate restaurant' : 'Activate restaurant'}
+                </button>
+              </div>
+            </div>
+
+            <div className="manage-next-card">
+              <div>
+                <div className="eyebrow">Coming next</div>
+                <h3>Owner, domain, settings and staff</h3>
+                <p>These sections will be connected to the restaurant's platform configuration from here.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="admin-shell">
       <header className="admin-header">
@@ -383,6 +483,7 @@ function App() {
                 </div>
 
                 <div className="row-actions">
+                  <button className="secondary-button" onClick={() => openRestaurant(restaurant)}>Manage</button>
                   <button className="secondary-button" onClick={() => startEdit(restaurant)}>Edit</button>
                   <button className={restaurant.is_active ? 'danger-button' : 'secondary-button'} onClick={() => toggleRestaurant(restaurant)}>
                     {restaurant.is_active ? 'Deactivate' : 'Activate'}
