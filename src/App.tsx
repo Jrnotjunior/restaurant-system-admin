@@ -616,7 +616,7 @@ function App() {
             </div>
           </div>
           <div className="admin-header-actions">
-            <button className="secondary-button" onClick={signOut}>Sign out</button>
+            <button className="admin-icon-button" onClick={signOut} title="Sign out" aria-label="Sign out"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H10"/><path d="M13 8l4 4-4 4M17 12H9"/></svg></button>
           </div>
         </header>
 
@@ -930,7 +930,7 @@ function App() {
             </div>
           </div>
           <div className="admin-header-actions">
-            <button className="secondary-button" onClick={openAuditLogs}>Audit Logs</button>
+            <button className="admin-icon-button" onClick={openAuditLogs} title="Audit Logs" aria-label="Audit Logs"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg></button>
             <button className="secondary-button" onClick={signOut}>Sign out</button>
           </div>
         </header>
