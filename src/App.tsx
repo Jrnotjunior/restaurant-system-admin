@@ -217,6 +217,7 @@ function App() {
     }
 
     setSettingsSaving(false);
+    setPendingSaveSettings(false);
   }
 
   async function loadRestaurantStaff(restaurantId: string) {
@@ -890,10 +891,7 @@ function App() {
                   </button>
                   <button
                     type="button"
-                    onClick={async () => {
-                      await saveRestaurantSettings();
-                      if (!settingsError) setPendingSaveSettings(false);
-                    }}
+                    onClick={() => void saveRestaurantSettings()}
                     disabled={settingsSaving}
                   >
                     {settingsSaving ? 'Saving...' : 'Confirm & Save'}
