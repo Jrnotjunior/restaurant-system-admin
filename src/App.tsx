@@ -326,130 +326,6 @@ function App() {
       return;
     }
 
-    if (adminPage === 'audit') {
-    return (
-      <main className="admin-shell">
-        <header className="admin-header">
-          <div className="brand-block">
-            <img className="company-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
-            <div>
-              <div className="eyebrow">WEB2TABLE Platform</div>
-              <h1>System Admin</h1>
-            </div>
-          </div>
-          <div className="admin-header-actions">
-            <button className="secondary-button" onClick={() => { setAdminPage('restaurants'); void loadRestaurants(); }}>Restaurants</button>
-            <div className="admin-header-actions">
-          <button className="secondary-button" onClick={openAuditLogs}>Audit Logs</button>
-          <button className="secondary-button" onClick={signOut}>Sign out</button>
-        </div>
-          </div>
-        </header>
-
-        <section className="dashboard-card audit-page-card">
-          <div className="section-heading">
-            <div>
-              <div className="eyebrow">Accountability</div>
-              <h2>Audit Logs</h2>
-              <p>Review System Administrator sign-ins and administrative changes across the platform.</p>
-            </div>
-            <button className="secondary-button" onClick={() => void loadAuditLogs()} disabled={auditLoading}>
-              {auditLoading ? 'Refreshing...' : 'Refresh'}
-            </button>
-          </div>
-
-          <div className="audit-summary-row">
-            <div className="stat-card"><span>Total records</span><strong>{auditLogs.length}</strong></div>
-            <div className="stat-card"><span>Administrative actions</span><strong>{auditLogs.filter((log) => log.event_type === 'ADMIN_ACTION').length}</strong></div>
-            <div className="stat-card"><span>Authentication events</span><strong>{auditLogs.filter((log) => log.event_type !== 'ADMIN_ACTION').length}</strong></div>
-          </div>
-
-          <div className="audit-toolbar">
-            <input
-              className="search-input"
-              type="search"
-              placeholder="Search administrator, restaurant, action..."
-              value={auditSearch}
-              onChange={(event) => setAuditSearch(event.target.value)}
-            />
-            <select value={auditEventFilter} onChange={(event) => setAuditEventFilter(event.target.value)}>
-              <option value="ALL">All events</option>
-              <option value="ADMIN_ACTION">Administrative actions</option>
-              <option value="LOGIN_SUCCESS">Login success</option>
-              <option value="LOGOUT">Logout</option>
-              <option value="ACCESS_DENIED">Access denied</option>
-            </select>
-          </div>
-
-          {auditError && <div className="error-banner">{auditError}</div>}
-
-          {auditLoading ? (
-            <div className="empty-state">Loading audit logs...</div>
-          ) : filteredAuditLogs.length === 0 ? (
-            <div className="empty-state">
-              <strong>No audit records found</strong>
-              <span>Try a different search or filter.</span>
-            </div>
-          ) : (
-            <div className="audit-table-wrap">
-              <table className="audit-table">
-                <thead>
-                  <tr>
-                    <th>Date &amp; Time</th>
-                    <th>Administrator</th>
-                    <th>Restaurant</th>
-                    <th>Event</th>
-                    <th>Action</th>
-                    <th>Changes / Details</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredAuditLogs.map((log) => {
-                    const changes = (log.details?.changes ?? null) as Record<string, unknown> | null;
-                    const createdValues = (log.details?.created_values ?? null) as Record<string, unknown> | null;
-
-                    return (
-                      <tr key={log.id}>
-                        <td className="audit-date">{new Date(log.created_at).toLocaleString()}</td>
-                        <td>
-                          <strong>{log.admin_name || log.admin_email || 'Unknown administrator'}</strong>
-                          {log.admin_name && log.admin_email && <span className="audit-subtext">{log.admin_email}</span>}
-                        </td>
-                        <td>{log.restaurant_name || '—'}</td>
-                        <td><span className={log.event_type === 'ADMIN_ACTION' ? 'audit-event admin' : 'audit-event'}>{log.event_type}</span></td>
-                        <td>{log.action}</td>
-                        <td>
-                          {changes && Object.keys(changes).length > 0 ? (
-                            <div className="audit-change-list">
-                              {Object.entries(changes).map(([field, value]) => {
-                                const pair = Array.isArray(value) ? value : [];
-                                return (
-                                  <div className="audit-change" key={field}>
-                                    <strong>{field.replaceAll('_', ' ')}</strong>
-                                    <span>{String(pair[0] ?? '—')} → {String(pair[1] ?? '—')}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : createdValues ? (
-                            <div className="audit-change-list">
-                              <div className="audit-change"><strong>Created with</strong><span>{String(createdValues.name ?? 'restaurant')}</span></div>
-                            </div>
-                          ) : (
-                            <span className="audit-subtext">{String(log.details?.source ?? '—')}</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-      </main>
-    );
-  }
 
   if (selectedRestaurant) {
       await loadRestaurantStaff(selectedRestaurant.id);
@@ -674,6 +550,131 @@ function App() {
     });
   }, [auditLogs, auditSearch, auditEventFilter]);
 
+  if (adminPage === 'audit') {
+    return (
+
+      <main className="admin-shell">
+        <header className="admin-header">
+          <div className="brand-block">
+            <img className="company-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
+            <div>
+              <div className="eyebrow">WEB2TABLE Platform</div>
+              <h1>System Admin</h1>
+            </div>
+          </div>
+          <div className="admin-header-actions">
+            <button className="secondary-button" onClick={() => { setAdminPage('restaurants'); void loadRestaurants(); }}>Restaurants</button>
+            <div className="admin-header-actions">
+          <button className="secondary-button" onClick={openAuditLogs}>Audit Logs</button>
+          <button className="secondary-button" onClick={signOut}>Sign out</button>
+        </div>
+          </div>
+        </header>
+
+        <section className="dashboard-card audit-page-card">
+          <div className="section-heading">
+            <div>
+              <div className="eyebrow">Accountability</div>
+              <h2>Audit Logs</h2>
+              <p>Review System Administrator sign-ins and administrative changes across the platform.</p>
+            </div>
+            <button className="secondary-button" onClick={() => void loadAuditLogs()} disabled={auditLoading}>
+              {auditLoading ? 'Refreshing...' : 'Refresh'}
+            </button>
+          </div>
+
+          <div className="audit-summary-row">
+            <div className="stat-card"><span>Total records</span><strong>{auditLogs.length}</strong></div>
+            <div className="stat-card"><span>Administrative actions</span><strong>{auditLogs.filter((log) => log.event_type === 'ADMIN_ACTION').length}</strong></div>
+            <div className="stat-card"><span>Authentication events</span><strong>{auditLogs.filter((log) => log.event_type !== 'ADMIN_ACTION').length}</strong></div>
+          </div>
+
+          <div className="audit-toolbar">
+            <input
+              className="search-input"
+              type="search"
+              placeholder="Search administrator, restaurant, action..."
+              value={auditSearch}
+              onChange={(event) => setAuditSearch(event.target.value)}
+            />
+            <select value={auditEventFilter} onChange={(event) => setAuditEventFilter(event.target.value)}>
+              <option value="ALL">All events</option>
+              <option value="ADMIN_ACTION">Administrative actions</option>
+              <option value="LOGIN_SUCCESS">Login success</option>
+              <option value="LOGOUT">Logout</option>
+              <option value="ACCESS_DENIED">Access denied</option>
+            </select>
+          </div>
+
+          {auditError && <div className="error-banner">{auditError}</div>}
+
+          {auditLoading ? (
+            <div className="empty-state">Loading audit logs...</div>
+          ) : filteredAuditLogs.length === 0 ? (
+            <div className="empty-state">
+              <strong>No audit records found</strong>
+              <span>Try a different search or filter.</span>
+            </div>
+          ) : (
+            <div className="audit-table-wrap">
+              <table className="audit-table">
+                <thead>
+                  <tr>
+                    <th>Date &amp; Time</th>
+                    <th>Administrator</th>
+                    <th>Restaurant</th>
+                    <th>Event</th>
+                    <th>Action</th>
+                    <th>Changes / Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAuditLogs.map((log) => {
+                    const changes = (log.details?.changes ?? null) as Record<string, unknown> | null;
+                    const createdValues = (log.details?.created_values ?? null) as Record<string, unknown> | null;
+
+                    return (
+                      <tr key={log.id}>
+                        <td className="audit-date">{new Date(log.created_at).toLocaleString()}</td>
+                        <td>
+                          <strong>{log.admin_name || log.admin_email || 'Unknown administrator'}</strong>
+                          {log.admin_name && log.admin_email && <span className="audit-subtext">{log.admin_email}</span>}
+                        </td>
+                        <td>{log.restaurant_name || '—'}</td>
+                        <td><span className={log.event_type === 'ADMIN_ACTION' ? 'audit-event admin' : 'audit-event'}>{log.event_type}</span></td>
+                        <td>{log.action}</td>
+                        <td>
+                          {changes && Object.keys(changes).length > 0 ? (
+                            <div className="audit-change-list">
+                              {Object.entries(changes).map(([field, value]) => {
+                                const pair = Array.isArray(value) ? value : [];
+                                return (
+                                  <div className="audit-change" key={field}>
+                                    <strong>{field.replaceAll('_', ' ')}</strong>
+                                    <span>{String(pair[0] ?? '—')} → {String(pair[1] ?? '—')}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : createdValues ? (
+                            <div className="audit-change-list">
+                              <div className="audit-change"><strong>Created with</strong><span>{String(createdValues.name ?? 'restaurant')}</span></div>
+                            </div>
+                          ) : (
+                            <span className="audit-subtext">{String(log.details?.source ?? '—')}</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      </main>
+    );
+  }
   const filteredRestaurants = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) return restaurants;
