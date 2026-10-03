@@ -531,6 +531,47 @@ function App() {
     };
   }, [authorized, selectedRestaurant?.id]);
 
+  useEffect(() => {
+    if (!authorized || adminPage !== 'audit') return;
+
+    void loadAuditLogs();
+
+    const channel = supabase
+      .channel('system-admin-audit-logs')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'system_admin_audit_logs' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newLog = payload.new as typeof auditLogs[number];
+            setAuditLogs((current) => {
+              if (current.some((log) => log.id === newLog.id)) return current;
+              return [newLog, ...current];
+            });
+          }
+
+          if (payload.eventType === 'UPDATE') {
+            const updatedLog = payload.new as typeof auditLogs[number];
+            setAuditLogs((current) =>
+              current
+                .map((log) => log.id === updatedLog.id ? updatedLog : log)
+                .sort((a, b) => b.created_at.localeCompare(a.created_at)),
+            );
+          }
+
+          if (payload.eventType === 'DELETE') {
+            const deletedLog = payload.old as typeof auditLogs[number];
+            setAuditLogs((current) => current.filter((log) => log.id !== deletedLog.id));
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [authorized, adminPage]);
+
   const filteredAuditLogs = useMemo(() => {
     const term = auditSearch.trim().toLowerCase();
 
@@ -575,12 +616,8 @@ function App() {
             </div>
           </div>
           <div className="admin-header-actions">
-            <button className="secondary-button" onClick={() => { setAdminPage('restaurants'); void loadRestaurants(); }}>Restaurants</button>
-            <div className="admin-header-actions">
-          <button className="secondary-button" onClick={openAuditLogs}>Audit Logs</button>
-          <button className="secondary-button" onClick={signOut}>Sign out</button>
-        </div>
-          </div>
+            <button className="secondary-button" onClick={signOut}>Sign out</button>
+          </div></div>
         </header>
 
         <section className="dashboard-card audit-page-card">
@@ -590,9 +627,6 @@ function App() {
               <h2>Audit Logs</h2>
               <p>Review System Administrator sign-ins and administrative changes across the platform.</p>
             </div>
-            <button className="secondary-button" onClick={() => void loadAuditLogs()} disabled={auditLoading}>
-              {auditLoading ? 'Refreshing...' : 'Refresh'}
-            </button>
           </div>
 
           <div className="audit-summary-row">
