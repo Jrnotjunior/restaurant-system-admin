@@ -1423,7 +1423,10 @@ function App() {
             <h1>System Admin</h1>
           </div>
         </div>
-        <button className="secondary-button" onClick={signOut}>Sign out</button>
+        <div className="admin-header-actions">
+          <button className="secondary-button" onClick={openAuditLogs}>Audit Logs</button>
+          <button className="secondary-button" onClick={signOut}>Sign out</button>
+        </div>
       </header>
 
       <section className="dashboard-card">
