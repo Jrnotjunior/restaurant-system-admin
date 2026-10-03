@@ -869,16 +869,32 @@ function App() {
                     onClick={() => setPendingDeleteStaff(null)}
                     disabled={staffActionId !== null}
                   >
-                    Cancel
+                    Close
                   </button>
-                  <button
-                    type="button"
-                    className="danger-button"
-                    onClick={() => void confirmDeleteRestaurantStaff()}
-                    disabled={staffActionId !== null}
-                  >
-                    {staffActionId === pendingDeleteStaff.id ? 'Deleting...' : 'Delete Staff'}
-                  </button>
+                  {staffActionError && pendingDeleteStaff.role === 'rider' ? (
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => {
+                        const staffId = pendingDeleteStaff.id;
+                        setPendingDeleteStaff(null);
+                        setStaffActionError('');
+                        void setRestaurantStaffActive(staffId, false);
+                      }}
+                      disabled={staffActionId !== null}
+                    >
+                      Deactivate Instead
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="danger-button"
+                      onClick={() => void confirmDeleteRestaurantStaff()}
+                      disabled={staffActionId !== null}
+                    >
+                      {staffActionId === pendingDeleteStaff.id ? 'Deleting...' : 'Delete Staff'}
+                    </button>
+                  )}
                 </div>
               </section>
             </div>
