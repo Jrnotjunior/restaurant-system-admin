@@ -160,10 +160,53 @@ function App() {
   }
 
   useEffect(() => {
-    if (authorized) {
-      loadRestaurants();
-    }
-  }, [authorized]);
+    if (!authorized) return;
+
+    void loadRestaurants();
+
+    const channel = supabase
+      .channel('system-admin-restaurants')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'restaurants' },
+        (payload) => {
+          const newRow = payload.new as Restaurant;
+          const oldRow = payload.old as Restaurant;
+
+          setRestaurants((current) => {
+            if (payload.eventType === 'INSERT') {
+              if (current.some((restaurant) => restaurant.id === newRow.id)) return current;
+              return [newRow, ...current];
+            }
+
+            if (payload.eventType === 'UPDATE') {
+              return current
+                .map((restaurant) => restaurant.id === newRow.id ? newRow : restaurant)
+                .sort((a, b) => b.created_at.localeCompare(a.created_at));
+            }
+
+            if (payload.eventType === 'DELETE') {
+              return current.filter((restaurant) => restaurant.id !== oldRow.id);
+            }
+
+            return current;
+          });
+
+          if (payload.eventType === 'UPDATE' && selectedRestaurant?.id === newRow.id) {
+            setSelectedRestaurant(newRow);
+          }
+
+          if (payload.eventType === 'DELETE' && selectedRestaurant?.id === oldRow.id) {
+            setSelectedRestaurant(null);
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [authorized, selectedRestaurant?.id]);
 
   const filteredRestaurants = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -443,9 +486,7 @@ function App() {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
-          <button className="secondary-button" onClick={loadRestaurants} disabled={restaurantLoading}>
-            {restaurantLoading ? 'Refreshing...' : 'Refresh'}
-          </button>
+          <span className="live-indicator"><span className="live-dot" /> Live</span>
         </div>
 
         {restaurantError && <div className="error-banner">{restaurantError}</div>}
