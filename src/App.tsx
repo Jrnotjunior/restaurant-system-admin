@@ -616,7 +616,7 @@ function App() {
             </div>
           </div>
           <div className="admin-header-actions">
-            <button className="admin-icon-button" onClick={signOut} title="Sign out" aria-label="Sign out"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H10"/><path d="M13 8l4 4-4 4M17 12H9"/></svg></button>
+            <button className="admin-icon-button" onClick={signOut} title="Account" aria-label="Account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg></button>
           </div>
         </header>
 
