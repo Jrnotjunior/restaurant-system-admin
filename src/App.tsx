@@ -85,6 +85,7 @@ function App() {
   const [pendingAssignOwner, setPendingAssignOwner] = useState(false);
   const [pendingRemoveOwner, setPendingRemoveOwner] = useState(false);
   const [pendingRestaurantStatus, setPendingRestaurantStatus] = useState<Restaurant | null>(null);
+  const [pendingRestaurantFormSave, setPendingRestaurantFormSave] = useState(false);
 
   async function checkAdminSession() {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -500,6 +501,11 @@ function App() {
 
   async function saveRestaurant(event: FormEvent) {
     event.preventDefault();
+    setPendingRestaurantFormSave(true);
+  }
+
+  async function confirmSaveRestaurant() {
+    setPendingRestaurantFormSave(false);
     setSaving(true);
     setRestaurantError('');
 
@@ -1195,7 +1201,7 @@ function App() {
                 <div className="row-actions">
                   <button className="secondary-button" onClick={() => openRestaurant(restaurant)}>Manage</button>
                   <button className="secondary-button" onClick={() => startEdit(restaurant)}>Edit</button>
-                  <button className={restaurant.is_active ? 'danger-button' : 'secondary-button'} onClick={() => toggleRestaurant(restaurant)}>
+                  <button className={restaurant.is_active ? 'danger-button' : 'secondary-button'} onClick={() => setPendingRestaurantStatus(restaurant)}>
                     {restaurant.is_active ? 'Deactivate' : 'Activate'}
                   </button>
                 </div>
@@ -1261,13 +1267,15 @@ function App() {
                 </label>
               </div>
 
-              <label className="checkbox-row">
+              <label className="toggle-row">
                 <input
+                  className="toggle-input"
                   type="checkbox"
                   checked={form.is_active}
                   onChange={(event) => updateForm('is_active', event.target.checked)}
                 />
-                <span>Restaurant is active</span>
+                <span className="toggle-switch" aria-hidden="true"><span /></span>
+                <span className="toggle-label">{form.is_active ? 'Active' : 'Inactive'}</span>
               </label>
 
               {restaurantError && <div className="error-banner">{restaurantError}</div>}
@@ -1277,6 +1285,34 @@ function App() {
                 <button type="submit" disabled={saving}>{saving ? 'Saving...' : editingRestaurant ? 'Save changes' : 'Create restaurant'}</button>
               </div>
             </form>
+          </section>
+        </div>
+      )}
+
+      {pendingRestaurantFormSave && (
+        <div className="modal-backdrop restaurant-form-confirm-backdrop" role="presentation">
+          <section className="modal-card restaurant-form-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="restaurant-save-title">
+            <div className="modal-heading">
+              <div>
+                <div className="eyebrow">{editingRestaurant ? 'Save Changes' : 'Create Restaurant'}</div>
+                <h2 id="restaurant-save-title">{editingRestaurant ? 'Save these changes?' : 'Create this restaurant?'}</h2>
+              </div>
+              <button className="icon-button" type="button" onClick={() => setPendingRestaurantFormSave(false)} disabled={saving} aria-label="Close">×</button>
+            </div>
+            <div className="restaurant-form-confirm-content">
+              <p>You are about to {editingRestaurant ? 'update' : 'create'} <strong>{form.name.trim() || 'this restaurant'}</strong>.</p>
+              <div className="restaurant-form-confirm-warning">
+                <strong>{editingRestaurant ? 'These changes will update the restaurant profile.' : 'This will create a new restaurant on the platform.'}</strong>
+                <span>{form.is_active ? 'The restaurant will be active after saving.' : 'The restaurant will be created as inactive.'}</span>
+              </div>
+              {restaurantError && <div className="error-banner">{restaurantError}</div>}
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="secondary-button" onClick={() => setPendingRestaurantFormSave(false)} disabled={saving}>Cancel</button>
+              <button type="button" onClick={() => void confirmSaveRestaurant()} disabled={saving}>
+                {saving ? 'Saving...' : editingRestaurant ? 'Confirm & Save' : 'Confirm & Create'}
+              </button>
+            </div>
           </section>
         </div>
       )}
