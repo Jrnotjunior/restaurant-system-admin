@@ -55,7 +55,13 @@ function App() {
   const [form, setForm] = useState<RestaurantForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
-  const [manageTab, setManageTab] = useState<'overview' | 'owner' | 'domain'>('overview');
+  const [manageTab, setManageTab] = useState<'overview' | 'owner' | 'domain' | 'settings'>('overview');
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsError, setSettingsError] = useState('');
+  const [shippingFee, setShippingFee] = useState('0.00');
+  const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
+  const [automaticRiderAssignmentEnabled, setAutomaticRiderAssignmentEnabled] = useState(false);
   const [domain, setDomain] = useState('');
   const [domainLoading, setDomainLoading] = useState(false);
   const [domainSaving, setDomainSaving] = useState(false);
@@ -151,6 +157,57 @@ function App() {
 
   async function signOut() {
     await supabase.auth.signOut();
+  }
+
+  async function loadRestaurantSettings(restaurantId: string) {
+    setSettingsLoading(true);
+    setSettingsError('');
+
+    const { data, error } = await supabase.rpc('system_admin_get_restaurant_settings', {
+      p_restaurant_id: restaurantId,
+    });
+
+    if (error) {
+      setSettingsError(error.message);
+    } else {
+      const settings = Array.isArray(data) ? data[0] : data;
+      setShippingFee(Number(settings?.shipping_fee ?? 0).toFixed(2));
+      setCashOnDeliveryEnabled(settings?.cash_on_delivery_enabled ?? true);
+      setAutomaticRiderAssignmentEnabled(settings?.automatic_rider_assignment_enabled ?? false);
+    }
+
+    setSettingsLoading(false);
+  }
+
+  async function saveRestaurantSettings() {
+    if (!selectedRestaurant) return;
+
+    const parsedShippingFee = Number(shippingFee);
+    if (!Number.isFinite(parsedShippingFee) || parsedShippingFee < 0) {
+      setSettingsError('Shipping fee must be zero or greater.');
+      return;
+    }
+
+    setSettingsSaving(true);
+    setSettingsError('');
+
+    const { data, error } = await supabase.rpc('system_admin_update_restaurant_settings', {
+      p_restaurant_id: selectedRestaurant.id,
+      p_shipping_fee: parsedShippingFee,
+      p_cash_on_delivery_enabled: cashOnDeliveryEnabled,
+      p_automatic_rider_assignment_enabled: automaticRiderAssignmentEnabled,
+    });
+
+    if (error) {
+      setSettingsError(error.message);
+    } else {
+      const settings = Array.isArray(data) ? data[0] : data;
+      setShippingFee(Number(settings?.shipping_fee ?? parsedShippingFee).toFixed(2));
+      setCashOnDeliveryEnabled(settings?.cash_on_delivery_enabled ?? cashOnDeliveryEnabled);
+      setAutomaticRiderAssignmentEnabled(settings?.automatic_rider_assignment_enabled ?? automaticRiderAssignmentEnabled);
+    }
+
+    setSettingsSaving(false);
   }
 
   async function saveDomain() {
@@ -311,6 +368,7 @@ function App() {
     setOwnerError('');
     setDomain('');
     setDomainError('');
+    setSettingsError('');
     setRestaurantError('');
   }
 
@@ -480,7 +538,7 @@ function App() {
             <button className={`manage-tab ${manageTab === 'overview' ? 'active' : ''}`} type="button" onClick={() => setManageTab('overview')}>Overview</button>
             <button className={`manage-tab ${manageTab === 'owner' ? 'active' : ''}`} type="button" onClick={() => { setManageTab('owner'); void loadRestaurantOwner(selectedRestaurant.id); }}>Owner</button>
             <button className={`manage-tab ${manageTab === 'domain' ? 'active' : ''}`} type="button" onClick={() => { setManageTab('domain'); setDomain(selectedRestaurant.custom_domain ?? ''); setDomainError(''); }}>Domain</button>
-            <button className="manage-tab" type="button" disabled>Settings</button>
+            <button className={`manage-tab ${manageTab === 'settings' ? 'active' : ''}`} type="button" onClick={() => { setManageTab('settings'); void loadRestaurantSettings(selectedRestaurant.id); }}>Settings</button>
             <button className="manage-tab" type="button" disabled>Staff</button>
           </nav>
 
@@ -546,7 +604,7 @@ function App() {
                 {ownerError && <div className="error-banner">{ownerError}</div>}
               </div>
             </div>
-          ) : (
+          ) : manageTab === 'domain' ? (
             <div className="manage-overview">
               <div className="overview-section">
                 <div className="eyebrow">Custom Domain</div>
@@ -558,6 +616,69 @@ function App() {
                 </div>
                 <div className="domain-help">Enter only the hostname, for example <strong>restaurant.com</strong>. Do not include https:// or a path.</div>
                 {domainError && <div className="error-banner">{domainError}</div>}
+              </div>
+            </div>
+          ) : (
+            <div className="manage-overview">
+              <div className="overview-section">
+                <div className="eyebrow">Restaurant Settings</div>
+                <h3>Operational controls</h3>
+                <p>These controls use the restaurant's existing platform settings. Changes made here apply to this restaurant.</p>
+
+                {settingsLoading ? (
+                  <div className="empty-state">Loading settings...</div>
+                ) : (
+                  <>
+                    <div className="detail-grid">
+                      <div className="detail-item">
+                        <span>Default shipping fee</span>
+                        <label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={shippingFee}
+                            onChange={(event) => setShippingFee(event.target.value)}
+                          />
+                        </label>
+                      </div>
+                      <div className="detail-item">
+                        <span>Cash on Delivery</span>
+                        <label className="checkbox-row">
+                          <input
+                            type="checkbox"
+                            checked={cashOnDeliveryEnabled}
+                            onChange={(event) => setCashOnDeliveryEnabled(event.target.checked)}
+                          />
+                          <span>{cashOnDeliveryEnabled ? 'Enabled' : 'Disabled'}</span>
+                        </label>
+                      </div>
+                      <div className="detail-item">
+                        <span>Automatic rider assignment</span>
+                        <label className="checkbox-row">
+                          <input
+                            type="checkbox"
+                            checked={automaticRiderAssignmentEnabled}
+                            onChange={(event) => setAutomaticRiderAssignmentEnabled(event.target.checked)}
+                          />
+                          <span>{automaticRiderAssignmentEnabled ? 'Enabled' : 'Disabled'}</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {settingsError && <div className="error-banner">{settingsError}</div>}
+
+                    <div className="status-panel">
+                      <div>
+                        <strong>Platform-level restaurant controls</strong>
+                        <span>System Administrator changes are saved through protected database functions.</span>
+                      </div>
+                      <button onClick={() => void saveRestaurantSettings()} disabled={settingsSaving}>
+                        {settingsSaving ? 'Saving...' : 'Save settings'}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
