@@ -87,6 +87,22 @@ function App() {
   const [pendingRestaurantStatus, setPendingRestaurantStatus] = useState<Restaurant | null>(null);
   const [pendingRestaurantFormSave, setPendingRestaurantFormSave] = useState(false);
 
+  async function recordAuthAuditEvent(
+    eventType: 'LOGIN_SUCCESS' | 'LOGOUT',
+    action: string,
+    details: Record<string, unknown> = {},
+  ) {
+    const { error } = await supabase.rpc('system_admin_record_auth_event', {
+      p_event_type: eventType,
+      p_action: action,
+      p_details: details,
+    });
+
+    if (error) {
+      console.error('Unable to record System Administrator audit event:', error);
+    }
+  }
+
   async function checkAdminSession() {
     const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData.session;
@@ -166,10 +182,22 @@ function App() {
       return;
     }
 
+    await recordAuthAuditEvent(
+      'LOGIN_SUCCESS',
+      'System Administrator signed in',
+      { source: 'system_admin_web_app' },
+    );
+
     setAuthorized(true);
   }
 
   async function signOut() {
+    await recordAuthAuditEvent(
+      'LOGOUT',
+      'System Administrator signed out',
+      { source: 'system_admin_web_app' },
+    );
+
     await supabase.auth.signOut();
   }
 
