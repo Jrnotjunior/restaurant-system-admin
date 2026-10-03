@@ -61,6 +61,9 @@ function App() {
   const [settingsError, setSettingsError] = useState('');
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
   const [automaticRiderAssignmentEnabled, setAutomaticRiderAssignmentEnabled] = useState(false);
+  const [vatRegistered, setVatRegistered] = useState(false);
+  const [pricesVatInclusive, setPricesVatInclusive] = useState(false);
+  const [vatRate, setVatRate] = useState('12');
   const [domain, setDomain] = useState('');
   const [domainLoading, setDomainLoading] = useState(false);
   const [domainSaving, setDomainSaving] = useState(false);
@@ -172,6 +175,9 @@ function App() {
       const settings = Array.isArray(data) ? data[0] : data;
       setCashOnDeliveryEnabled(settings?.cash_on_delivery_enabled ?? true);
       setAutomaticRiderAssignmentEnabled(settings?.automatic_rider_assignment_enabled ?? false);
+      setVatRegistered(settings?.tax_vat_registered ?? false);
+      setPricesVatInclusive(settings?.tax_prices_vat_inclusive ?? false);
+      setVatRate(String(settings?.tax_vat_rate ?? 0));
     }
 
     setSettingsLoading(false);
@@ -187,6 +193,9 @@ function App() {
       p_restaurant_id: selectedRestaurant.id,
       p_cash_on_delivery_enabled: cashOnDeliveryEnabled,
       p_automatic_rider_assignment_enabled: automaticRiderAssignmentEnabled,
+      p_tax_vat_registered: vatRegistered,
+      p_tax_prices_vat_inclusive: pricesVatInclusive,
+      p_tax_vat_rate: Number(vatRate),
     });
 
     if (error) {
@@ -195,6 +204,9 @@ function App() {
       const settings = Array.isArray(data) ? data[0] : data;
       setCashOnDeliveryEnabled(settings?.cash_on_delivery_enabled ?? cashOnDeliveryEnabled);
       setAutomaticRiderAssignmentEnabled(settings?.automatic_rider_assignment_enabled ?? automaticRiderAssignmentEnabled);
+      setVatRegistered(settings?.tax_vat_registered ?? vatRegistered);
+      setPricesVatInclusive(settings?.tax_prices_vat_inclusive ?? pricesVatInclusive);
+      setVatRate(String(settings?.tax_vat_rate ?? vatRate));
     }
 
     setSettingsSaving(false);
@@ -613,13 +625,33 @@ function App() {
               <div className="overview-section">
                 <div className="eyebrow">Restaurant Settings</div>
                 <h3>Operational controls</h3>
-                <p>These are platform-controlled workflow switches. Restaurant owners can view their status, but only the System Administrator can change them.</p>
+                <p>These are platform-controlled financial and workflow settings. Restaurant owners can view their status, but only the System Administrator can change them.</p>
 
                 {settingsLoading ? (
                   <div className="empty-state">Loading settings...</div>
                 ) : (
                   <>
                     <div className="detail-grid">
+                      <div className="detail-item">
+                        <span>VAT registered</span>
+                        <label className="checkbox-row">
+                          <input type="checkbox" checked={vatRegistered} onChange={(event) => setVatRegistered(event.target.checked)} />
+                          <span>{vatRegistered ? 'Enabled' : 'Disabled'}</span>
+                        </label>
+                      </div>
+                      <div className="detail-item">
+                        <span>VAT rate</span>
+                        <label>
+                          <input type="number" min="0" max="100" step="0.01" value={vatRate} onChange={(event) => setVatRate(event.target.value)} />
+                        </label>
+                      </div>
+                      <div className="detail-item">
+                        <span>Prices are VAT-inclusive</span>
+                        <label className="checkbox-row">
+                          <input type="checkbox" checked={pricesVatInclusive} onChange={(event) => setPricesVatInclusive(event.target.checked)} />
+                          <span>{pricesVatInclusive ? 'Enabled' : 'Disabled'}</span>
+                        </label>
+                      </div>
                       <div className="detail-item">
                         <span>Cash on Delivery</span>
                         <label className="checkbox-row">
