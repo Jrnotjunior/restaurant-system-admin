@@ -697,11 +697,30 @@ function App() {
                 <div className="eyebrow">Custom Domain</div>
                 <h3>Restaurant domain</h3>
                 <p>Assign the public domain that will identify this restaurant on the ordering platform.</p>
-                <div className="domain-form">
-                  <label>Domain<input value={domain} onChange={(event) => setDomain(event.target.value)} placeholder="restaurant.com" /></label>
-                  <button onClick={() => { setDomainError(''); setPendingSaveDomain(true); }} disabled={domainSaving || !domain.trim()}>{domainSaving ? 'Saving...' : 'Save domain'}</button>
+                <div className="domain-status-panel">
+                  <div>
+                    <strong>{domain ? 'Custom domain configured' : 'No custom domain configured'}</strong>
+                    <span>
+                      {domain
+                        ? <>This restaurant is configured to use <strong>{domain}</strong>.</>
+                        : 'The restaurant is currently using its WEB2TABLE platform URL.'}
+                    </span>
+                  </div>
+                  <span className={domain ? 'status active' : 'status inactive'}>{domain ? 'Configured' : 'Not configured'}</span>
                 </div>
-                <div className="domain-help">Enter only the hostname, for example <strong>restaurant.com</strong>. Do not include https:// or a path.</div>
+
+                <div className="domain-form">
+                  <label>
+                    Custom domain
+                    <input value={domain} onChange={(event) => setDomain(event.target.value)} placeholder="restaurant.com" />
+                  </label>
+                  <button onClick={() => { setDomainError(''); setPendingSaveDomain(true); }} disabled={domainSaving || !domain.trim()}>
+                    {domainSaving ? 'Saving...' : 'Save domain'}
+                  </button>
+                </div>
+                <div className="domain-help">
+                  Add a custom domain only when one is available. Enter only the hostname, for example <strong>restaurant.com</strong>. Do not include https:// or a path.
+                </div>
                 {domainError && <div className="error-banner">{domainError}</div>}
               </div>
             </div>
