@@ -698,9 +698,14 @@ function App() {
                 <div className="restaurant-slug">/{selectedRestaurant.slug}</div>
               </div>
             </div>
-            <span className={selectedRestaurant.is_active ? 'status active' : 'status inactive'}>
-              {selectedRestaurant.is_active ? 'Active' : 'Inactive'}
-            </span>
+            <div className="restaurant-hero-actions">
+              <span className={selectedRestaurant.is_active ? 'status active' : 'status inactive'}>
+                {selectedRestaurant.is_active ? 'Active' : 'Inactive'}
+              </span>
+              <button className="secondary-button" type="button" onClick={() => startEdit(selectedRestaurant)}>
+                Edit restaurant
+              </button>
+            </div>
           </div>
 
           <nav className="manage-tabs" aria-label="Restaurant management sections">
