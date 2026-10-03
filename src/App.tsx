@@ -265,7 +265,7 @@ function App() {
       <main className="auth-shell">
         <section className="auth-card">
           <img className="company-logo auth-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
-          <div className="eyebrow">Restaurant Platform</div>
+          <div className="eyebrow">WEB2TABLE Platform</div>
           <h1>System Admin</h1>
           <p>Sign in to manage restaurants and platform settings.</p>
           <form onSubmit={signIn}>
@@ -288,7 +288,7 @@ function App() {
     return (
       <main className="auth-shell">
         <section className="auth-card">
-          <div className="eyebrow">Restaurant Platform</div>
+          <div className="eyebrow">WEB2TABLE Platform</div>
           <h1>Access denied</h1>
           <p>Your account is signed in but is not authorized as a System Administrator.</p>
           <button onClick={signOut}>Sign out</button>
@@ -303,7 +303,7 @@ function App() {
         <div className="brand-block">
           <img className="company-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
           <div>
-            <div className="eyebrow">Restaurant Platform</div>
+            <div className="eyebrow">WEB2TABLE Platform</div>
             <h1>System Admin</h1>
           </div>
         </div>
