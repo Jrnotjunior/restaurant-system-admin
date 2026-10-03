@@ -3,6 +3,7 @@ import { supabase } from './lib/supabase';
 
 type Restaurant = {
   id: string;
+  owner_id: string | null;
   slug: string;
   name: string;
   tagline: string;
@@ -53,6 +54,13 @@ function App() {
   const [form, setForm] = useState<RestaurantForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+  const [manageTab, setManageTab] = useState<'overview' | 'owner'>('overview');
+  const [ownerLoading, setOwnerLoading] = useState(false);
+  const [ownerSaving, setOwnerSaving] = useState(false);
+  const [ownerEmail, setOwnerEmail] = useState('');
+  const [ownerName, setOwnerName] = useState('');
+  const [ownerUserId, setOwnerUserId] = useState('');
+  const [ownerError, setOwnerError] = useState('');
 
   async function checkAdminSession() {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -140,13 +148,66 @@ function App() {
     await supabase.auth.signOut();
   }
 
+  async function loadRestaurantOwner(restaurantId: string) {
+    setOwnerLoading(true);
+    setOwnerError('');
+    const { data, error } = await supabase.rpc('system_admin_get_restaurant_owner', { p_restaurant_id: restaurantId });
+    if (error) {
+      setOwnerError(error.message);
+      setOwnerEmail('');
+      setOwnerName('');
+      setOwnerUserId('');
+    } else {
+      const owner = Array.isArray(data) ? data[0] : data;
+      setOwnerEmail(owner?.email ?? '');
+      setOwnerName(owner?.full_name ?? '');
+      setOwnerUserId(owner?.user_id ?? '');
+    }
+    setOwnerLoading(false);
+  }
+
+  async function assignOwner() {
+    if (!selectedRestaurant || !ownerEmail.trim()) return;
+    setOwnerSaving(true);
+    setOwnerError('');
+    const { data, error } = await supabase.rpc('system_admin_assign_restaurant_owner', {
+      p_restaurant_id: selectedRestaurant.id,
+      p_email: ownerEmail.trim(),
+    });
+    if (error) {
+      setOwnerError(error.message);
+      setOwnerSaving(false);
+      return;
+    }
+    const owner = Array.isArray(data) ? data[0] : data;
+    setOwnerEmail(owner?.email ?? ownerEmail.trim());
+    setOwnerName(owner?.full_name ?? '');
+    setOwnerUserId(owner?.user_id ?? '');
+    setOwnerSaving(false);
+  }
+
+  async function removeOwner() {
+    if (!selectedRestaurant) return;
+    setOwnerSaving(true);
+    setOwnerError('');
+    const { error } = await supabase.rpc('system_admin_remove_restaurant_owner', { p_restaurant_id: selectedRestaurant.id });
+    if (error) {
+      setOwnerError(error.message);
+    } else {
+      setOwnerEmail('');
+      setOwnerName('');
+      setOwnerUserId('');
+    }
+    setOwnerSaving(false);
+  }
+
   async function loadRestaurants() {
     setRestaurantLoading(true);
     setRestaurantError('');
 
     const { data, error } = await supabase
       .from('restaurants')
-      .select('id,slug,name,tagline,logo_url,location_text,contact_number,email,is_active,created_at,updated_at')
+      .select('id,owner_id,slug,name,tagline,logo_url,location_text,contact_number,email,is_active,created_at,updated_at')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -222,6 +283,11 @@ function App() {
 
   function openRestaurant(restaurant: Restaurant) {
     setSelectedRestaurant(restaurant);
+    setManageTab('overview');
+    setOwnerEmail('');
+    setOwnerName('');
+    setOwnerUserId('');
+    setOwnerError('');
     setRestaurantError('');
   }
 
@@ -388,13 +454,14 @@ function App() {
           </div>
 
           <nav className="manage-tabs" aria-label="Restaurant management sections">
-            <button className="manage-tab active" type="button">Overview</button>
-            <button className="manage-tab" type="button" disabled>Owner</button>
+            <button className={`manage-tab ${manageTab === 'overview' ? 'active' : ''}`} type="button" onClick={() => setManageTab('overview')}>Overview</button>
+            <button className={`manage-tab ${manageTab === 'owner' ? 'active' : ''}`} type="button" onClick={() => { setManageTab('owner'); void loadRestaurantOwner(selectedRestaurant.id); }}>Owner</button>
             <button className="manage-tab" type="button" disabled>Domain</button>
             <button className="manage-tab" type="button" disabled>Settings</button>
             <button className="manage-tab" type="button" disabled>Staff</button>
           </nav>
 
+          {manageTab === 'overview' ? (
           <div className="manage-overview">
             <div className="overview-section">
               <div className="eyebrow">Restaurant Information</div>
@@ -419,7 +486,7 @@ function App() {
                 </div>
                 <button className={selectedRestaurant.is_active ? 'danger-button' : 'secondary-button'} onClick={async () => {
                   await toggleRestaurant(selectedRestaurant);
-                  const { data } = await supabase.from('restaurants').select('id,slug,name,tagline,logo_url,location_text,contact_number,email,is_active,created_at,updated_at').eq('id', selectedRestaurant.id).single();
+                  const { data } = await supabase.from('restaurants').select('id,owner_id,slug,name,tagline,logo_url,location_text,contact_number,email,is_active,created_at,updated_at').eq('id', selectedRestaurant.id).single();
                   if (data) setSelectedRestaurant(data as Restaurant);
                 }}>
                   {selectedRestaurant.is_active ? 'Deactivate restaurant' : 'Activate restaurant'}
@@ -435,6 +502,28 @@ function App() {
               </div>
             </div>
           </div>
+          ) : (
+            <div className="manage-overview">
+              <div className="overview-section">
+                <div className="eyebrow">Restaurant Owner</div>
+                <h3>Owner account</h3>
+                <p>Assign an existing Supabase account as the owner of this restaurant. A new account is not created here.</p>
+                {ownerLoading ? <div className="empty-state owner-loading">Loading owner...</div> : ownerUserId ? (
+                  <div className="owner-current">
+                    <div className="owner-avatar">{(ownerName || ownerEmail).charAt(0).toUpperCase()}</div>
+                    <div className="owner-current-details"><strong>{ownerName || 'Restaurant Owner'}</strong><span>{ownerEmail}</span><small>User ID: {ownerUserId}</small></div>
+                    <button className="danger-button" onClick={() => void removeOwner()} disabled={ownerSaving}>Remove owner</button>
+                  </div>
+                ) : (
+                  <div className="owner-form">
+                    <label>Owner account email<input type="email" value={ownerEmail} onChange={(event) => setOwnerEmail(event.target.value)} placeholder="owner@example.com" /></label>
+                    <button onClick={() => void assignOwner()} disabled={ownerSaving || !ownerEmail.trim()}>{ownerSaving ? 'Assigning...' : 'Assign owner'}</button>
+                  </div>
+                )}
+                {ownerError && <div className="error-banner">{ownerError}</div>}
+              </div>
+            </div>
+          )}
         </section>
       </main>
     );
