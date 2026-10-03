@@ -84,6 +84,7 @@ function App() {
   const [ownerError, setOwnerError] = useState('');
   const [pendingAssignOwner, setPendingAssignOwner] = useState(false);
   const [pendingRemoveOwner, setPendingRemoveOwner] = useState(false);
+  const [pendingRestaurantStatus, setPendingRestaurantStatus] = useState<Restaurant | null>(null);
 
   async function checkAdminSession() {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -641,6 +642,8 @@ function App() {
                 <div className="detail-item"><span>Location</span><strong>{selectedRestaurant.location_text || '—'}</strong></div>
                 <div className="detail-item"><span>Contact number</span><strong>{selectedRestaurant.contact_number || '—'}</strong></div>
                 <div className="detail-item"><span>Email</span><strong>{selectedRestaurant.email || '—'}</strong></div>
+                <div className="detail-item"><span>Custom domain</span><strong>{selectedRestaurant.custom_domain || 'Not configured'}</strong></div>
+                <div className="detail-item"><span>Created</span><strong>{new Date(selectedRestaurant.created_at).toLocaleDateString()}</strong></div>
               </div>
             </div>
 
@@ -652,22 +655,16 @@ function App() {
                   <strong>{selectedRestaurant.is_active ? 'Restaurant is active' : 'Restaurant is inactive'}</strong>
                   <span>{selectedRestaurant.is_active ? 'Customers can access this restaurant.' : 'Customers cannot access this restaurant while inactive.'}</span>
                 </div>
-                <button className={selectedRestaurant.is_active ? 'danger-button' : 'secondary-button'} onClick={async () => {
-                  await toggleRestaurant(selectedRestaurant);
-                  const { data } = await supabase.from('restaurants').select('id,owner_id,custom_domain,slug,name,tagline,logo_url,location_text,contact_number,email,is_active,created_at,updated_at').eq('id', selectedRestaurant.id).single();
-                  if (data) setSelectedRestaurant(data as Restaurant);
-                }}>
+                <button className={selectedRestaurant.is_active ? 'danger-button' : 'secondary-button'} onClick={() => setPendingRestaurantStatus(selectedRestaurant)}>
                   {selectedRestaurant.is_active ? 'Deactivate restaurant' : 'Activate restaurant'}
                 </button>
               </div>
             </div>
 
-            <div className="manage-next-card">
-              <div>
-                <div className="eyebrow">Coming next</div>
-                <h3>Owner, domain, settings and staff</h3>
-                <p>These sections will be connected to the restaurant's platform configuration from here.</p>
-              </div>
+            <div className="overview-section">
+              <div className="eyebrow">Management</div>
+              <h3>Platform controls</h3>
+              <p>Use the tabs above to manage the restaurant owner, custom domain, operational settings, and staff accounts.</p>
             </div>
           </div>
           ) : manageTab === 'owner' ? (
@@ -877,6 +874,44 @@ function App() {
             </div>
           )}
         </section>
+          {pendingRestaurantStatus && (
+            <div className="modal-backdrop restaurant-status-confirm-backdrop" role="presentation">
+              <section className="modal-card restaurant-status-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="restaurant-status-title">
+                <div className="modal-heading">
+                  <div>
+                    <div className="eyebrow">{pendingRestaurantStatus.is_active ? 'Deactivate Restaurant' : 'Activate Restaurant'}</div>
+                    <h2 id="restaurant-status-title">{pendingRestaurantStatus.is_active ? 'Deactivate this restaurant?' : 'Activate this restaurant?'}</h2>
+                  </div>
+                  <button className="icon-button" type="button" onClick={() => setPendingRestaurantStatus(null)} aria-label="Close">×</button>
+                </div>
+                <div className="restaurant-status-confirm-content">
+                  <p>You are about to <strong>{pendingRestaurantStatus.is_active ? 'deactivate' : 'activate'}</strong> <strong>{pendingRestaurantStatus.name}</strong>.</p>
+                  <div className="restaurant-status-confirm-warning">
+                    <strong>{pendingRestaurantStatus.is_active ? 'Customers will no longer be able to access this restaurant.' : 'Customers will be able to access this restaurant again.'}</strong>
+                    <span>This changes the restaurant's platform access status.</span>
+                  </div>
+                  {restaurantError && <div className="error-banner">{restaurantError}</div>}
+                </div>
+                <div className="modal-actions">
+                  <button type="button" className="secondary-button" onClick={() => setPendingRestaurantStatus(null)}>Cancel</button>
+                  <button
+                    type="button"
+                    className={pendingRestaurantStatus.is_active ? 'danger-button' : ''}
+                    onClick={async () => {
+                      const restaurant = pendingRestaurantStatus;
+                      await toggleRestaurant(restaurant);
+                      const { data } = await supabase.from('restaurants').select('id,owner_id,custom_domain,slug,name,tagline,logo_url,location_text,contact_number,email,is_active,created_at,updated_at').eq('id', restaurant.id).single();
+                      if (data) setSelectedRestaurant(data as Restaurant);
+                      setPendingRestaurantStatus(null);
+                    }}
+                  >
+                    {pendingRestaurantStatus.is_active ? 'Confirm & Deactivate' : 'Confirm & Activate'}
+                  </button>
+                </div>
+              </section>
+            </div>
+          )}
+
           {pendingSaveDomain && (
             <div className="modal-backdrop domain-confirm-backdrop" role="presentation">
               <section className="modal-card domain-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="save-domain-title">
