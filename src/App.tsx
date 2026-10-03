@@ -775,9 +775,15 @@ function App() {
                     <div className="detail-grid">
                       <div className="detail-item">
                         <span>VAT registered</span>
-                        <label className="checkbox-row">
-                          <input type="checkbox" checked={vatRegistered} onChange={(event) => setVatRegistered(event.target.checked)} />
-                          <span>{vatRegistered ? 'Enabled' : 'Disabled'}</span>
+                        <label className="toggle-row">
+                          <input
+                            className="toggle-input"
+                            type="checkbox"
+                            checked={vatRegistered}
+                            onChange={(event) => setVatRegistered(event.target.checked)}
+                          />
+                          <span className="toggle-switch" aria-hidden="true"><span /></span>
+                          <span className="toggle-label">{vatRegistered ? 'Enabled' : 'Disabled'}</span>
                         </label>
                       </div>
                       <div className="detail-item">
@@ -788,31 +794,41 @@ function App() {
                       </div>
                       <div className="detail-item">
                         <span>Prices are VAT-inclusive</span>
-                        <label className="checkbox-row">
-                          <input type="checkbox" checked={pricesVatInclusive} onChange={(event) => setPricesVatInclusive(event.target.checked)} />
-                          <span>{pricesVatInclusive ? 'Enabled' : 'Disabled'}</span>
+                        <label className="toggle-row">
+                          <input
+                            className="toggle-input"
+                            type="checkbox"
+                            checked={pricesVatInclusive}
+                            onChange={(event) => setPricesVatInclusive(event.target.checked)}
+                          />
+                          <span className="toggle-switch" aria-hidden="true"><span /></span>
+                          <span className="toggle-label">{pricesVatInclusive ? 'Enabled' : 'Disabled'}</span>
                         </label>
                       </div>
                       <div className="detail-item">
                         <span>Cash on Delivery</span>
-                        <label className="checkbox-row">
+                        <label className="toggle-row">
                           <input
+                            className="toggle-input"
                             type="checkbox"
                             checked={cashOnDeliveryEnabled}
                             onChange={(event) => setCashOnDeliveryEnabled(event.target.checked)}
                           />
-                          <span>{cashOnDeliveryEnabled ? 'Enabled' : 'Disabled'}</span>
+                          <span className="toggle-switch" aria-hidden="true"><span /></span>
+                          <span className="toggle-label">{cashOnDeliveryEnabled ? 'Enabled' : 'Disabled'}</span>
                         </label>
                       </div>
                       <div className="detail-item">
                         <span>Automatic rider assignment</span>
-                        <label className="checkbox-row">
+                        <label className="toggle-row">
                           <input
+                            className="toggle-input"
                             type="checkbox"
                             checked={automaticRiderAssignmentEnabled}
                             onChange={(event) => setAutomaticRiderAssignmentEnabled(event.target.checked)}
                           />
-                          <span>{automaticRiderAssignmentEnabled ? 'Enabled' : 'Disabled'}</span>
+                          <span className="toggle-switch" aria-hidden="true"><span /></span>
+                          <span className="toggle-label">{automaticRiderAssignmentEnabled ? 'Enabled' : 'Disabled'}</span>
                         </label>
                       </div>
                     </div>
