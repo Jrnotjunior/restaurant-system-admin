@@ -75,6 +75,7 @@ function App() {
   const [domainLoading, setDomainLoading] = useState(false);
   const [domainSaving, setDomainSaving] = useState(false);
   const [domainError, setDomainError] = useState('');
+  const [pendingSaveDomain, setPendingSaveDomain] = useState(false);
   const [ownerLoading, setOwnerLoading] = useState(false);
   const [ownerSaving, setOwnerSaving] = useState(false);
   const [ownerEmail, setOwnerEmail] = useState('');
@@ -305,6 +306,7 @@ function App() {
       setDomainError(error.message);
     } else {
       setDomain(typeof data === 'string' ? data : domain.trim().toLowerCase());
+      setPendingSaveDomain(false);
     }
     setDomainSaving(false);
   }
@@ -697,7 +699,7 @@ function App() {
                 <p>Assign the public domain that will identify this restaurant on the ordering platform.</p>
                 <div className="domain-form">
                   <label>Domain<input value={domain} onChange={(event) => setDomain(event.target.value)} placeholder="restaurant.com" /></label>
-                  <button onClick={() => void saveDomain()} disabled={domainSaving}>{domainSaving ? 'Saving...' : 'Save domain'}</button>
+                  <button onClick={() => { setDomainError(''); setPendingSaveDomain(true); }} disabled={domainSaving || !domain.trim()}>{domainSaving ? 'Saving...' : 'Save domain'}</button>
                 </div>
                 <div className="domain-help">Enter only the hostname, for example <strong>restaurant.com</strong>. Do not include https:// or a path.</div>
                 {domainError && <div className="error-banner">{domainError}</div>}
@@ -856,6 +858,32 @@ function App() {
             </div>
           )}
         </section>
+          {pendingSaveDomain && (
+            <div className="modal-backdrop domain-confirm-backdrop" role="presentation">
+              <section className="modal-card domain-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="save-domain-title">
+                <div className="modal-heading">
+                  <div>
+                    <div className="eyebrow">Save Domain</div>
+                    <h2 id="save-domain-title">Apply this domain?</h2>
+                  </div>
+                  <button className="icon-button" type="button" onClick={() => setPendingSaveDomain(false)} disabled={domainSaving} aria-label="Close">×</button>
+                </div>
+                <div className="domain-confirm-content">
+                  <p>You are about to set the public domain for <strong>{selectedRestaurant.name}</strong> to <strong>{domain.trim().toLowerCase()}</strong>.</p>
+                  <div className="domain-confirm-warning">
+                    <strong>This will change the restaurant's public domain configuration.</strong>
+                    <span>Use only the hostname, such as restaurant.com. Do not include https:// or a path.</span>
+                  </div>
+                  {domainError && <div className="error-banner">{domainError}</div>}
+                </div>
+                <div className="modal-actions">
+                  <button type="button" className="secondary-button" onClick={() => setPendingSaveDomain(false)} disabled={domainSaving}>Cancel</button>
+                  <button type="button" onClick={() => void saveDomain()} disabled={domainSaving}>{domainSaving ? 'Saving...' : 'Confirm & Save'}</button>
+                </div>
+              </section>
+            </div>
+          )}
+
           {pendingSaveSettings && (
             <div className="modal-backdrop settings-confirm-backdrop" role="presentation">
               <section className="modal-card settings-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="save-settings-title">
