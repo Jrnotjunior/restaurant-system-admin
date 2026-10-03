@@ -65,6 +65,7 @@ function App() {
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsError, setSettingsError] = useState('');
+  const [pendingSaveSettings, setPendingSaveSettings] = useState(false);
   const [cashOnDeliveryEnabled, setCashOnDeliveryEnabled] = useState(true);
   const [automaticRiderAssignmentEnabled, setAutomaticRiderAssignmentEnabled] = useState(false);
   const [vatRegistered, setVatRegistered] = useState(false);
@@ -840,7 +841,7 @@ function App() {
                         <strong>Platform-level restaurant controls</strong>
                         <span>System Administrator changes are saved through protected database functions.</span>
                       </div>
-                      <button onClick={() => void saveRestaurantSettings()} disabled={settingsSaving}>
+                      <button onClick={() => setPendingSaveSettings(true)} disabled={settingsSaving}>
                         {settingsSaving ? 'Saving...' : 'Save settings'}
                       </button>
                     </div>
@@ -850,6 +851,58 @@ function App() {
             </div>
           )}
         </section>
+          {pendingSaveSettings && (
+            <div className="modal-backdrop settings-confirm-backdrop" role="presentation">
+              <section className="modal-card settings-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="save-settings-title">
+                <div className="modal-heading">
+                  <div>
+                    <div className="eyebrow">Save Settings</div>
+                    <h2 id="save-settings-title">Apply these settings?</h2>
+                  </div>
+                  <button
+                    className="icon-button"
+                    type="button"
+                    onClick={() => setPendingSaveSettings(false)}
+                    disabled={settingsSaving}
+                    aria-label="Close"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="settings-confirm-content">
+                  <p>You are about to update the operational settings for <strong>{selectedRestaurant.name}</strong>.</p>
+                  <div className="settings-confirm-warning">
+                    <strong>This will immediately change how this restaurant handles these settings.</strong>
+                    <span>Review the VAT, payment, and rider assignment settings before confirming.</span>
+                  </div>
+                  {settingsError && <div className="error-banner">{settingsError}</div>}
+                </div>
+
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => setPendingSaveSettings(false)}
+                    disabled={settingsSaving}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await saveRestaurantSettings();
+                      if (!settingsError) setPendingSaveSettings(false);
+                    }}
+                    disabled={settingsSaving}
+                  >
+                    {settingsSaving ? 'Saving...' : 'Confirm & Save'}
+                  </button>
+                </div>
+              </section>
+            </div>
+          )}
+
           {pendingDeleteStaff && (
             <div className="modal-backdrop staff-delete-backdrop" role="presentation">
               <section className="modal-card staff-delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-staff-title">
