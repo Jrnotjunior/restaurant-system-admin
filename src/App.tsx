@@ -581,16 +581,42 @@ function App() {
 
     const restaurantId = editingRestaurant?.id ?? (result.data as { id: string } | null)?.id ?? null;
 
+    const restaurantChanges = editingRestaurant
+      ? Object.fromEntries(
+          Object.entries({
+            name: [editingRestaurant.name, payload.name],
+            slug: [editingRestaurant.slug, payload.slug],
+            tagline: [editingRestaurant.tagline, payload.tagline],
+            logo_url: [editingRestaurant.logo_url, payload.logo_url],
+            location_text: [editingRestaurant.location_text, payload.location_text],
+            contact_number: [editingRestaurant.contact_number, payload.contact_number],
+            email: [editingRestaurant.email, payload.email],
+            is_active: [editingRestaurant.is_active, payload.is_active],
+          }).filter(([, [oldValue, newValue]]) => oldValue !== newValue),
+        )
+      : {};
+
     await recordAdminAudit(
       editingRestaurant ? 'Restaurant profile updated' : 'Restaurant created',
       restaurantId,
       'restaurant',
       restaurantId,
-      {
-        name: payload.name,
-        slug: payload.slug,
-        is_active: payload.is_active,
-      },
+      editingRestaurant
+        ? {
+            changes: restaurantChanges,
+          }
+        : {
+            created_values: {
+              name: payload.name,
+              slug: payload.slug,
+              tagline: payload.tagline,
+              logo_url: payload.logo_url,
+              location_text: payload.location_text,
+              contact_number: payload.contact_number,
+              email: payload.email,
+              is_active: payload.is_active,
+            },
+          },
     );
 
     setSaving(false);
