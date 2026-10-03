@@ -103,6 +103,27 @@ function App() {
     }
   }
 
+  async function recordAdminAudit(
+    action: string,
+    restaurantId: string | null,
+    entityType: string,
+    entityId: string | null,
+    details: Record<string, unknown> = {},
+  ) {
+    const { error } = await supabase.rpc('system_admin_write_audit_log', {
+      p_event_type: 'ADMIN_ACTION',
+      p_action: action,
+      p_restaurant_id: restaurantId,
+      p_entity_type: entityType,
+      p_entity_id: entityId,
+      p_details: details,
+    });
+
+    if (error) {
+      console.error('Unable to record System Administrator audit event:', error);
+    }
+  }
+
   async function checkAdminSession() {
     const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData.session;
@@ -550,13 +571,27 @@ function App() {
 
     const result = editingRestaurant
       ? await supabase.from('restaurants').update(payload).eq('id', editingRestaurant.id)
-      : await supabase.from('restaurants').insert(payload);
+      : await supabase.from('restaurants').insert(payload).select('id').single();
 
     if (result.error) {
       setRestaurantError(result.error.message);
       setSaving(false);
       return;
     }
+
+    const restaurantId = editingRestaurant?.id ?? (result.data as { id: string } | null)?.id ?? null;
+
+    await recordAdminAudit(
+      editingRestaurant ? 'Restaurant profile updated' : 'Restaurant created',
+      restaurantId,
+      'restaurant',
+      restaurantId,
+      {
+        name: payload.name,
+        slug: payload.slug,
+        is_active: payload.is_active,
+      },
+    );
 
     setSaving(false);
     closeForm();
@@ -576,6 +611,18 @@ function App() {
       setRestaurantError(error.message);
       return;
     }
+
+    await recordAdminAudit(
+      nextStatus ? 'Restaurant activated' : 'Restaurant deactivated',
+      restaurant.id,
+      'restaurant',
+      restaurant.id,
+      {
+        name: restaurant.name,
+        previous_status: restaurant.is_active ? 'active' : 'inactive',
+        new_status: nextStatus ? 'active' : 'inactive',
+      },
+    );
 
     await loadRestaurants();
   }
