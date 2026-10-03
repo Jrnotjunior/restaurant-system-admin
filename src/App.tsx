@@ -55,7 +55,10 @@ function App() {
   const [form, setForm] = useState<RestaurantForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
-  const [manageTab, setManageTab] = useState<'overview' | 'owner' | 'domain' | 'settings'>('overview');
+  const [manageTab, setManageTab] = useState<'overview' | 'owner' | 'domain' | 'settings' | 'staff'>('overview');
+  const [staffLoading, setStaffLoading] = useState(false);
+  const [staffError, setStaffError] = useState('');
+  const [restaurantStaff, setRestaurantStaff] = useState<Array<{ id: string; name: string; mobile_number: string; email: string; role: string; is_active: boolean; auth_user_id: string | null }>>([]);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsError, setSettingsError] = useState('');
@@ -210,6 +213,24 @@ function App() {
     }
 
     setSettingsSaving(false);
+  }
+
+  async function loadRestaurantStaff(restaurantId: string) {
+    setStaffLoading(true);
+    setStaffError('');
+
+    const { data, error } = await supabase.rpc('system_admin_get_restaurant_staff', {
+      p_restaurant_id: restaurantId,
+    });
+
+    if (error) {
+      setStaffError(error.message);
+      setRestaurantStaff([]);
+    } else {
+      setRestaurantStaff(Array.isArray(data) ? data : []);
+    }
+
+    setStaffLoading(false);
   }
 
   async function saveDomain() {
@@ -541,7 +562,7 @@ function App() {
             <button className={`manage-tab ${manageTab === 'owner' ? 'active' : ''}`} type="button" onClick={() => { setManageTab('owner'); void loadRestaurantOwner(selectedRestaurant.id); }}>Owner</button>
             <button className={`manage-tab ${manageTab === 'domain' ? 'active' : ''}`} type="button" onClick={() => { setManageTab('domain'); setDomain(selectedRestaurant.custom_domain ?? ''); setDomainError(''); }}>Domain</button>
             <button className={`manage-tab ${manageTab === 'settings' ? 'active' : ''}`} type="button" onClick={() => { setManageTab('settings'); void loadRestaurantSettings(selectedRestaurant.id); }}>Settings</button>
-            <button className="manage-tab" type="button" disabled>Staff</button>
+            <button className={`manage-tab ${manageTab === 'staff' ? 'active' : ''}`} type="button" onClick={() => { setManageTab('staff'); void loadRestaurantStaff(selectedRestaurant.id); }}>Staff</button>
           </nav>
 
           {manageTab === 'overview' ? (
@@ -618,6 +639,46 @@ function App() {
                 </div>
                 <div className="domain-help">Enter only the hostname, for example <strong>restaurant.com</strong>. Do not include https:// or a path.</div>
                 {domainError && <div className="error-banner">{domainError}</div>}
+              </div>
+            </div>
+          ) : manageTab === 'staff' ? (
+            <div className="manage-overview">
+              <div className="overview-section">
+                <div className="eyebrow">Staff</div>
+                <h3>Restaurant staff</h3>
+                <p>View the staff accounts associated with this restaurant. Staff invitations and account management remain part of the restaurant owner's workflow.</p>
+                {staffLoading ? (
+                  <div className="empty-state">Loading staff...</div>
+                ) : staffError ? (
+                  <div className="error-banner">{staffError}</div>
+                ) : restaurantStaff.length === 0 ? (
+                  <div className="empty-state">No staff accounts found for this restaurant.</div>
+                ) : (
+                  <div className="staff-table-wrap">
+                    <table className="staff-table">
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Role</th>
+                          <th>Email</th>
+                          <th>Mobile</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {restaurantStaff.map((staff) => (
+                          <tr key={staff.id}>
+                            <td>{staff.name || '—'}</td>
+                            <td>{staff.role.charAt(0).toUpperCase() + staff.role.slice(1)}</td>
+                            <td>{staff.email || '—'}</td>
+                            <td>{staff.mobile_number || '—'}</td>
+                            <td><span className={staff.is_active ? 'status active' : 'status inactive'}>{staff.is_active ? 'Active' : 'Inactive'}</span></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
