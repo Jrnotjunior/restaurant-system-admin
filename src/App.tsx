@@ -617,7 +617,7 @@ function App() {
           </div>
           <div className="admin-header-actions">
             <button className="secondary-button" onClick={signOut}>Sign out</button>
-          </div></div>
+          </div>
         </header>
 
         <section className="dashboard-card audit-page-card">
