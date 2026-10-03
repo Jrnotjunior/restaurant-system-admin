@@ -5,6 +5,7 @@ function App() {
   const [email,setEmail]=useState('');
   const [password,setPassword]=useState('');
   const [signedIn,setSignedIn]=useState(false);
+  const [authorized,setAuthorized]=useState(false);
   const [loading,setLoading]=useState(true);
 
   useEffect(() => {
@@ -13,7 +14,11 @@ function App() {
       if(active){setSignedIn(Boolean(data.session));setLoading(false);}
     });
     const {data:listener}=supabase.auth.onAuthStateChange((_event,session)=>{
-      setSignedIn(Boolean(session));
+      const hasSession=Boolean(session);
+      setSignedIn(hasSession);
+      if (!hasSession) {
+        setAuthorized(false);
+      }
     });
     return ()=>{active=false;listener.subscription.unsubscribe();};
   },[]);
@@ -21,7 +26,25 @@ function App() {
   async function signIn(event:FormEvent){
     event.preventDefault();
     const {error}=await supabase.auth.signInWithPassword({email,password});
-    if(error) window.alert(error.message);
+    if(error) {
+      window.alert(error.message);
+      return;
+    }
+    const { data: adminStatus, error: adminError } = await supabase.rpc('get_my_system_admin_status');
+    if (adminError) {
+      await supabase.auth.signOut();
+    setAuthorized(false);
+      window.alert(adminError.message);
+      return;
+    }
+    if (adminStatus !== true) {
+      await supabase.auth.signOut();
+      setSignedIn(false);
+      setAuthorized(false);
+      window.alert('This account is not authorized as a System Administrator.');
+      return;
+    }
+    setAuthorized(true);
   }
 
   async function signOut(){ await supabase.auth.signOut(); }
@@ -42,6 +65,19 @@ function App() {
       </section>
     </main>
   );
+
+  if (!authorized) {
+    return (
+      <main className="auth-shell">
+        <section className="auth-card">
+          <div className="eyebrow">Restaurant Platform</div>
+          <h1>Access denied</h1>
+          <p>Your account is signed in but is not authorized as a System Administrator.</p>
+          <button onClick={signOut}>Sign out</button>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="admin-shell">
