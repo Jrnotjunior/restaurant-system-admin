@@ -264,6 +264,7 @@ function App() {
     return (
       <main className="auth-shell">
         <section className="auth-card">
+          <img className="company-logo auth-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
           <div className="eyebrow">Restaurant Platform</div>
           <h1>System Admin</h1>
           <p>Sign in to manage restaurants and platform settings.</p>
@@ -299,9 +300,12 @@ function App() {
   return (
     <main className="admin-shell">
       <header className="admin-header">
-        <div>
-          <div className="eyebrow">Restaurant Platform</div>
-          <h1>System Admin</h1>
+        <div className="brand-block">
+          <img className="company-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
+          <div>
+            <div className="eyebrow">Restaurant Platform</div>
+            <h1>System Admin</h1>
+          </div>
         </div>
         <button className="secondary-button" onClick={signOut}>Sign out</button>
       </header>
