@@ -59,6 +59,8 @@ function App() {
   const [staffLoading, setStaffLoading] = useState(false);
   const [staffError, setStaffError] = useState('');
   const [restaurantStaff, setRestaurantStaff] = useState<Array<{ id: string; name: string; mobile_number: string; email: string; role: string; is_active: boolean; auth_user_id: string | null }>>([]);
+  const [staffActionId, setStaffActionId] = useState<string | null>(null);
+  const [staffActionError, setStaffActionError] = useState('');
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsError, setSettingsError] = useState('');
@@ -231,6 +233,55 @@ function App() {
     }
 
     setStaffLoading(false);
+  }
+
+  async function setRestaurantStaffActive(staffId: string, isActive: boolean) {
+    setStaffActionId(staffId);
+    setStaffActionError('');
+
+    const { error } = await supabase.rpc('system_admin_set_restaurant_staff_active', {
+      p_staff_id: staffId,
+      p_is_active: isActive,
+    });
+
+    if (error) {
+      setStaffActionError(error.message);
+      setStaffActionId(null);
+      return;
+    }
+
+    if (selectedRestaurant) {
+      await loadRestaurantStaff(selectedRestaurant.id);
+    }
+
+    setStaffActionId(null);
+  }
+
+  async function deleteRestaurantStaff(staff: typeof restaurantStaff[number]) {
+    const confirmed = window.confirm(
+      `Delete ${staff.name || 'this staff member'} from this restaurant? This removes the staff record but does not delete the Supabase Auth account. Historical operational records are not deleted.`,
+    );
+
+    if (!confirmed) return;
+
+    setStaffActionId(staff.id);
+    setStaffActionError('');
+
+    const { error } = await supabase.rpc('system_admin_delete_restaurant_staff', {
+      p_staff_id: staff.id,
+    });
+
+    if (error) {
+      setStaffActionError(error.message);
+      setStaffActionId(null);
+      return;
+    }
+
+    if (selectedRestaurant) {
+      await loadRestaurantStaff(selectedRestaurant.id);
+    }
+
+    setStaffActionId(null);
   }
 
   async function saveDomain() {
@@ -654,7 +705,9 @@ function App() {
                 ) : restaurantStaff.length === 0 ? (
                   <div className="empty-state">No staff accounts found for this restaurant.</div>
                 ) : (
-                  <div className="staff-table-wrap">
+                  <>
+                    {staffActionError && <div className="error-banner">{staffActionError}</div>}
+                    <div className="staff-table-wrap">
                     <table className="staff-table">
                       <thead>
                         <tr>
@@ -663,6 +716,7 @@ function App() {
                           <th>Email</th>
                           <th>Mobile</th>
                           <th>Status</th>
+                          <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -673,11 +727,32 @@ function App() {
                             <td>{staff.email || '—'}</td>
                             <td>{staff.mobile_number || '—'}</td>
                             <td><span className={staff.is_active ? 'status active' : 'status inactive'}>{staff.is_active ? 'Active' : 'Inactive'}</span></td>
+                            <td>
+                              <div className="staff-actions">
+                                <button
+                                  className="secondary-button"
+                                  type="button"
+                                  onClick={() => void setRestaurantStaffActive(staff.id, !staff.is_active)}
+                                  disabled={staffActionId !== null}
+                                >
+                                  {staffActionId === staff.id ? 'Saving...' : staff.is_active ? 'Deactivate' : 'Activate'}
+                                </button>
+                                <button
+                                  className="danger-button"
+                                  type="button"
+                                  onClick={() => void deleteRestaurantStaff(staff)}
+                                  disabled={staffActionId !== null}
+                                >
+                                  {staffActionId === staff.id ? 'Working...' : 'Delete'}
+                                </button>
+                              </div>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
+                  </>
                 )}
               </div>
             </div>
