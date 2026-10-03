@@ -61,6 +61,7 @@ function App() {
   const [restaurantStaff, setRestaurantStaff] = useState<Array<{ id: string; name: string; mobile_number: string; email: string; role: string; is_active: boolean; auth_user_id: string | null }>>([]);
   const [staffActionId, setStaffActionId] = useState<string | null>(null);
   const [staffActionError, setStaffActionError] = useState('');
+  const [pendingDeleteStaff, setPendingDeleteStaff] = useState<typeof restaurantStaff[number] | null>(null);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsError, setSettingsError] = useState('');
@@ -257,18 +258,20 @@ function App() {
     setStaffActionId(null);
   }
 
-  async function deleteRestaurantStaff(staff: typeof restaurantStaff[number]) {
-    const confirmed = window.confirm(
-      `Delete ${staff.name || 'this staff member'} from this restaurant? This removes the staff record but does not delete the Supabase Auth account. Historical operational records are not deleted.`,
-    );
+  function requestDeleteRestaurantStaff(staff: typeof restaurantStaff[number]) {
+    setStaffActionError('');
+    setPendingDeleteStaff(staff);
+  }
 
-    if (!confirmed) return;
+  async function confirmDeleteRestaurantStaff() {
+    if (!pendingDeleteStaff) return;
 
-    setStaffActionId(staff.id);
+    const staffId = pendingDeleteStaff.id;
+    setStaffActionId(staffId);
     setStaffActionError('');
 
     const { error } = await supabase.rpc('system_admin_delete_restaurant_staff', {
-      p_staff_id: staff.id,
+      p_staff_id: staffId,
     });
 
     if (error) {
@@ -276,6 +279,8 @@ function App() {
       setStaffActionId(null);
       return;
     }
+
+    setPendingDeleteStaff(null);
 
     if (selectedRestaurant) {
       await loadRestaurantStaff(selectedRestaurant.id);
@@ -740,7 +745,7 @@ function App() {
                                 <button
                                   className="danger-button"
                                   type="button"
-                                  onClick={() => void deleteRestaurantStaff(staff)}
+                                  onClick={() => requestDeleteRestaurantStaff(staff)}
                                   disabled={staffActionId !== null}
                                 >
                                   {staffActionId === staff.id ? 'Working...' : 'Delete'}
@@ -829,6 +834,56 @@ function App() {
             </div>
           )}
         </section>
+          {pendingDeleteStaff && (
+            <div className="modal-backdrop staff-delete-backdrop" role="presentation">
+              <section className="modal-card staff-delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-staff-title">
+                <div className="modal-heading">
+                  <div>
+                    <div className="eyebrow">Delete Staff</div>
+                    <h2 id="delete-staff-title">Delete {pendingDeleteStaff.name || 'staff member'}?</h2>
+                  </div>
+                  <button
+                    className="icon-button"
+                    type="button"
+                    onClick={() => setPendingDeleteStaff(null)}
+                    disabled={staffActionId !== null}
+                    aria-label="Close"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="staff-delete-content">
+                  <p>This will remove the staff record from this restaurant.</p>
+                  <div className="staff-delete-warning">
+                    <strong>This action does not delete the Supabase Auth account.</strong>
+                    <span>Historical operational records are not deleted.</span>
+                  </div>
+                  {staffActionError && <div className="error-banner">{staffActionError}</div>}
+                </div>
+
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() => setPendingDeleteStaff(null)}
+                    disabled={staffActionId !== null}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="danger-button"
+                    onClick={() => void confirmDeleteRestaurantStaff()}
+                    disabled={staffActionId !== null}
+                  >
+                    {staffActionId === pendingDeleteStaff.id ? 'Deleting...' : 'Delete Staff'}
+                  </button>
+                </div>
+              </section>
+            </div>
+          )}
+
       </main>
     );
   }
