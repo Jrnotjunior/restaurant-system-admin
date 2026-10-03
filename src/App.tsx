@@ -550,6 +550,18 @@ function App() {
     });
   }, [auditLogs, auditSearch, auditEventFilter]);
 
+  const filteredRestaurants = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return restaurants;
+
+    return restaurants.filter((restaurant) =>
+      [restaurant.name, restaurant.slug, restaurant.location_text ?? '', restaurant.email ?? '']
+        .join(' ')
+        .toLowerCase()
+        .includes(term),
+    );
+  }, [restaurants, search]);
+
   if (adminPage === 'audit') {
     return (
 
@@ -675,17 +687,7 @@ function App() {
       </main>
     );
   }
-  const filteredRestaurants = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return restaurants;
 
-    return restaurants.filter((restaurant) =>
-      [restaurant.name, restaurant.slug, restaurant.location_text ?? '', restaurant.email ?? '']
-        .join(' ')
-        .toLowerCase()
-        .includes(term),
-    );
-  }, [restaurants, search]);
 
   function openRestaurant(restaurant: Restaurant) {
     setSelectedRestaurant(restaurant);
