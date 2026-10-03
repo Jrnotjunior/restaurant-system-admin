@@ -339,7 +339,10 @@ function App() {
           </div>
           <div className="admin-header-actions">
             <button className="secondary-button" onClick={() => { setAdminPage('restaurants'); void loadRestaurants(); }}>Restaurants</button>
-            <button className="secondary-button" onClick={signOut}>Sign out</button>
+            <div className="admin-header-actions">
+          <button className="secondary-button" onClick={openAuditLogs}>Audit Logs</button>
+          <button className="secondary-button" onClick={signOut}>Sign out</button>
+        </div>
           </div>
         </header>
 
