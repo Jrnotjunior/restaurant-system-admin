@@ -47,7 +47,7 @@ const emptyForm: RestaurantForm = {
 
 function App() {
   const supabaseProjectHost = import.meta.env.VITE_SUPABASE_URL ? new URL(import.meta.env.VITE_SUPABASE_URL).host : 'not configured';
-  const buildMarker = '2026-10-04-DIAGNOSTIC-2';
+  const buildMarker = '2026-10-04-FIX-4';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [signedIn, setSignedIn] = useState(false);
@@ -435,6 +435,7 @@ function App() {
     setAuthorized(true);
     setInviteSetup(false);
     setLoading(false);
+    await loadDashboard();
     return true;
   }
 
@@ -544,6 +545,7 @@ function App() {
 
     setAuthorized(true);
     setLoading(false);
+    await loadDashboard();
   }
 
   async function signOut() {
@@ -567,7 +569,7 @@ function App() {
     setSelectedRestaurant(null);
     setAdminPage('dashboard');
 
-    window.location.replace(`${window.location.pathname}?page=dashboard&v=${buildMarker}`);
+    window.location.href = `${window.location.pathname}?page=dashboard&v=${buildMarker}&signedOut=1`;
   }
 
   async function loadRestaurantSettings(restaurantId: string) {
