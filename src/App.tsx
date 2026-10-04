@@ -548,27 +548,20 @@ function App() {
     await loadDashboard();
   }
 
-  function signOut() {
+  async function signOut() {
     setAccountMenuOpen(false);
 
-    // Start the Supabase local sign-out, but do not make the UI depend on
-    // the promise completing. The browser must be able to leave the session
-    // even if an auth request hangs or the client is in a bad state.
-    void supabase.auth.signOut({ scope: 'local' }).catch((error) => {
-      console.error('Supabase local sign out error:', error);
-    });
+    // Use Supabase's normal global sign-out flow. This is the same
+    // authentication path used by the original System Admin logout.
+    const { error } = await supabase.auth.signOut({ scope: 'global' });
 
-    // Supabase JS persists its session under this project-specific key.
-    // Remove only this app's auth session; do not touch unrelated storage.
-    const projectRef = new URL(import.meta.env.VITE_SUPABASE_URL).hostname.split('.')[0];
-    const authStorageKey = `sb-${projectRef}-auth-token`;
-    try {
-      window.localStorage.removeItem(authStorageKey);
-      window.sessionStorage.removeItem(authStorageKey);
-    } catch (error) {
-      console.error('Unable to clear local auth storage:', error);
+    if (error) {
+      console.error('System Administrator sign out failed:', error);
+      window.alert(error.message || 'Unable to sign out. Please try again.');
+      return;
     }
 
+    // Clear the UI immediately after Supabase confirms sign-out.
     setSignedIn(false);
     setAuthorized(false);
     setAdminAccessLevel(null);
@@ -576,6 +569,7 @@ function App() {
     setSelectedRestaurant(null);
     setAdminPage('dashboard');
 
+    // Return to the normal application entry point.
     window.location.replace(window.location.pathname);
   }
 
