@@ -863,7 +863,6 @@ function App() {
             <button className="account-menu-item" onClick={signOut}>Sign out</button>
           </div>
         )}
-        <button className="back-button" onClick={() => setAdminPage('restaurants')}>← Back to restaurants</button>
         <section className="dashboard-card administrators-card">
           <div className="section-heading">
             <div><div className="eyebrow">Access Control</div><h2>System Administrators</h2><p>Manage who can access the WEB2TABLE System Admin platform.</p></div>
