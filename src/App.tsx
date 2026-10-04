@@ -67,6 +67,7 @@ function App() {
   const [inviteAdminSaving, setInviteAdminSaving] = useState(false);
   const [inviteAdminError, setInviteAdminError] = useState('');
   const [inviteAdminSuccess, setInviteAdminSuccess] = useState('');
+  const [inviteAdminConfirmationEmail, setInviteAdminConfirmationEmail] = useState('');
   const [inviteSetup, setInviteSetup] = useState(false);
   const [invitePassword, setInvitePassword] = useState('');
   const [invitePasswordConfirm, setInvitePasswordConfirm] = useState('');
@@ -219,6 +220,7 @@ function App() {
     setSelectedRestaurant(null);
     setInviteAdminError('');
     setInviteAdminSuccess('');
+    setInviteAdminConfirmationEmail('');
     void loadAdministrators();
   }
 
@@ -247,7 +249,10 @@ function App() {
       return;
     }
 
-    setInviteAdminSuccess(`Invitation sent to ${inviteAdminEmail.trim()}.`);
+    const sentEmail = inviteAdminEmail.trim();
+    setInviteAdminSuccess(`Invitation sent to ${sentEmail}.`);
+    setInviteAdminConfirmationEmail(sentEmail);
+    setShowInviteAdmin(false);
     setInviteAdminEmail('');
     setInviteAdminAccessLevel('administrator');
     setInviteAdminSaving(false);
@@ -893,6 +898,42 @@ function App() {
                 {inviteAdminError && <div className="error-banner">{inviteAdminError}</div>}
                 <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setShowInviteAdmin(false)} disabled={inviteAdminSaving}>Cancel</button><button type="submit" disabled={inviteAdminSaving}>{inviteAdminSaving ? 'Sending...' : 'Send Invitation'}</button></div>
               </form>
+            </section>
+          </div>
+        )}
+        {inviteAdminConfirmationEmail && (
+          <div className="modal-backdrop" role="presentation">
+            <section className="modal-card administrator-invite-success-modal" role="dialog" aria-modal="true" aria-labelledby="invite-admin-success-title">
+              <div className="modal-heading">
+                <div>
+                  <div className="eyebrow">Invitation Sent</div>
+                  <h2 id="invite-admin-success-title">Invitation email sent</h2>
+                </div>
+                <button
+                  className="icon-button"
+                  type="button"
+                  onClick={() => setInviteAdminConfirmationEmail('')}
+                  aria-label="Close"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="administrator-action-content">
+                <div className="success-banner">The invitation email has been sent successfully.</div>
+                <p>The invitation was sent to <strong>{inviteAdminConfirmationEmail}</strong>.</p>
+                <div className="administrator-action-warning">
+                  <strong>The account is currently pending.</strong>
+                  <span>The invitee must open the invitation email and create a password before the account becomes active.</span>
+                </div>
+              </div>
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  onClick={() => setInviteAdminConfirmationEmail('')}
+                >
+                  Done
+                </button>
+              </div>
             </section>
           </div>
         )}
