@@ -546,26 +546,25 @@ function App() {
   async function signOut() {
     setAccountMenuOpen(false);
 
-    // Sign out must never be blocked by audit logging.
-    const auditPromise = recordAuthAuditEvent(
-      'LOGOUT',
-      'System Administrator signed out',
-      { source: 'system_admin_web_app' },
-    );
+    // Logout must remain available even if audit logging or another
+    // client-side state update is delayed. Sign out first, then reload
+    // the app so the login screen is guaranteed to render.
+    const { error } = await supabase.auth.signOut();
 
-    await Promise.race([
-      auditPromise,
-      new Promise<void>((resolve) => window.setTimeout(resolve, 1500)),
-    ]);
+    if (error) {
+      console.error('System Administrator sign out failed:', error);
+      window.alert(error.message || 'Unable to sign out. Please try again.');
+      return;
+    }
 
-    await supabase.auth.signOut();
     setSignedIn(false);
     setAuthorized(false);
     setAdminAccessLevel(null);
-    setAccountMenuOpen(false);
     setRestaurants([]);
     setSelectedRestaurant(null);
     setAdminPage('dashboard');
+
+    window.location.replace(window.location.pathname);
   }
 
   async function loadRestaurantSettings(restaurantId: string) {
