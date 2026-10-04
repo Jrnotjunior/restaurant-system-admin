@@ -239,7 +239,21 @@ function App() {
     });
 
     if (error) {
-      setInviteAdminError(error.message);
+      let message = error.message;
+
+      try {
+        const response = (error as { context?: Response }).context;
+        if (response) {
+          const responseBody = await response.clone().json() as { error?: unknown };
+          if (typeof responseBody.error === 'string' && responseBody.error.trim()) {
+            message = responseBody.error;
+          }
+        }
+      } catch {
+        // Keep the original FunctionsHttpError message if the response body cannot be parsed.
+      }
+
+      setInviteAdminError(message);
       setInviteAdminSaving(false);
       return;
     }
