@@ -74,6 +74,11 @@ function App() {
   const [inviteAdminError, setInviteAdminError] = useState('');
   const [inviteAdminSuccess, setInviteAdminSuccess] = useState('');
   const [inviteAdminConfirmationEmail, setInviteAdminConfirmationEmail] = useState('');
+  const [showInviteTenant, setShowInviteTenant] = useState(false);
+  const [inviteTenantEmail, setInviteTenantEmail] = useState('');
+  const [inviteTenantSaving, setInviteTenantSaving] = useState(false);
+  const [inviteTenantError, setInviteTenantError] = useState('');
+  const [inviteTenantSuccess, setInviteTenantSuccess] = useState('');
   const [inviteSetup, setInviteSetup] = useState(false);
   const [invitePassword, setInvitePassword] = useState('');
   const [invitePasswordConfirm, setInvitePasswordConfirm] = useState('');
@@ -745,6 +750,52 @@ function App() {
       setPendingSaveDomain(false);
     }
     setDomainSaving(false);
+  }
+
+  async function inviteTenant(event: FormEvent) {
+    event.preventDefault();
+    setInviteTenantSaving(true);
+    setInviteTenantError('');
+    setInviteTenantSuccess('');
+
+    const email = inviteTenantEmail.trim().toLowerCase();
+    if (!email) {
+      setInviteTenantError('Tenant owner email is required.');
+      setInviteTenantSaving(false);
+      return;
+    }
+
+    const { data, error } = await supabase.functions.invoke('system-admin-invite-tenant', {
+      body: { email },
+    });
+
+    if (error) {
+      let message = error.message;
+      try {
+        const response = (error as { context?: Response }).context;
+        if (response) {
+          const responseBody = await response.clone().json() as { error?: unknown };
+          if (typeof responseBody.error === 'string' && responseBody.error.trim()) {
+            message = responseBody.error;
+          }
+        }
+      } catch {
+        // Keep the original Functions error message.
+      }
+      setInviteTenantError(message);
+      setInviteTenantSaving(false);
+      return;
+    }
+
+    if (data?.error) {
+      setInviteTenantError(String(data.error));
+      setInviteTenantSaving(false);
+      return;
+    }
+
+    setInviteTenantSuccess(`Invitation sent to ${email}. The tenant will create their own restaurant identity after accepting.`);
+    setInviteTenantEmail('');
+    setInviteTenantSaving(false);
   }
 
   async function loadRestaurantOwner(restaurantId: string) {
@@ -2462,7 +2513,16 @@ function App() {
             <h2>Restaurants</h2>
             <p>Manage restaurants connected to this ordering platform.</p>
           </div>
-          {canManage && <button onClick={startCreate}>Add restaurant</button>}
+          {adminAccessLevel === 'owner' && (
+            <button onClick={() => {
+              setInviteTenantError('');
+              setInviteTenantSuccess('');
+              setInviteTenantEmail('');
+              setShowInviteTenant(true);
+            }}>
+              Invite tenant
+            </button>
+          )}
         </div>
 
         <div className="stats-row">
@@ -2537,6 +2597,63 @@ function App() {
           </div>
         )}
       </section>
+
+      {showInviteTenant && (
+        <div className="modal-backdrop" role="presentation">
+          <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="tenant-invite-title">
+            <div className="modal-heading">
+              <div>
+                <div className="eyebrow">Tenant onboarding</div>
+                <h2 id="tenant-invite-title">Invite a tenant</h2>
+              </div>
+              <button
+                className="icon-button"
+                type="button"
+                onClick={() => setShowInviteTenant(false)}
+                disabled={inviteTenantSaving}
+                aria-label="Close"
+              >×</button>
+            </div>
+
+            <form className="restaurant-form" onSubmit={inviteTenant}>
+              <p>
+                Send an invitation to the business owner. They will create their own
+                restaurant name, slug, branding, settings, and other restaurant identity
+                after accepting the invitation.
+              </p>
+
+              <label>
+                Tenant owner email
+                <input
+                  type="email"
+                  value={inviteTenantEmail}
+                  onChange={(event) => setInviteTenantEmail(event.target.value)}
+                  placeholder="owner@example.com"
+                  required
+                  disabled={inviteTenantSaving}
+                />
+              </label>
+
+              {inviteTenantError && <div className="error-banner">{inviteTenantError}</div>}
+              {inviteTenantSuccess && <div className="success-banner">{inviteTenantSuccess}</div>}
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setShowInviteTenant(false)}
+                  disabled={inviteTenantSaving}
+                >
+                  Close
+                </button>
+                <button type="submit" disabled={inviteTenantSaving}>
+                  {inviteTenantSaving ? 'Sending invitation...' : 'Send invitation'}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
 
       {showForm && (
         <div className="modal-backdrop" role="presentation">
