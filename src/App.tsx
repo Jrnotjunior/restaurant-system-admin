@@ -126,6 +126,7 @@ function App() {
   const [adminPage, setAdminPage] = useState<AdminPage>('dashboard');
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState('');
+  const [dashboardDiagnostic, setDashboardDiagnostic] = useState('');
   const [dashboardSummary, setDashboardSummary] = useState<{ total_restaurants: number; active_restaurants: number; inactive_restaurants: number; active_system_administrators: number; pending_system_administrators: number; } | null>(null);
   const [dashboardRestaurantMonitoring, setDashboardRestaurantMonitoring] = useState<Array<{
     restaurant_id: string;
@@ -768,6 +769,11 @@ function App() {
   async function loadDashboard() {
     setDashboardLoading(true);
     setDashboardError('');
+    setDashboardDiagnostic('');
+
+    const { data: userResult, error: userError } = await supabase.auth.getUser();
+    const userId = userResult.user?.id ?? 'none';
+    setDashboardDiagnostic(`Signed-in user: ${userId}${userError ? ` · Auth error: ${userError.message}` : ''}`);
 
     const [summaryResult, monitoringResult, logsResult] = await Promise.all([
       supabase.rpc('system_admin_get_dashboard_summary'),
@@ -785,9 +791,15 @@ function App() {
 
     if (summaryResult.error) {
       setDashboardError(summaryResult.error.message);
+      setDashboardSummary(null);
     } else {
       const summary = Array.isArray(summaryResult.data) ? summaryResult.data[0] : summaryResult.data;
-      setDashboardSummary(summary ?? null);
+      if (!summary) {
+        setDashboardError('Dashboard summary returned no row.');
+        setDashboardSummary(null);
+      } else {
+        setDashboardSummary(summary);
+      }
     }
 
     if (monitoringResult.error) {
@@ -795,6 +807,9 @@ function App() {
       setDashboardRestaurantMonitoring([]);
     } else {
       setDashboardRestaurantMonitoring((Array.isArray(monitoringResult.data) ? monitoringResult.data : []) as typeof dashboardRestaurantMonitoring);
+      if (!Array.isArray(monitoringResult.data)) {
+        setDashboardError((current) => current || 'Restaurant monitoring returned an unexpected response.');
+      }
     }
 
     if (logsResult.error) {
@@ -1138,7 +1153,7 @@ function App() {
           <div className="account-menu">
             <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
             {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
-            <button className="account-menu-item" onClick={signOut}>Sign out</button>
+            <button type="button" className="account-menu-item" onClick={(event) => { event.preventDefault(); event.stopPropagation(); void signOut(); }}>Sign out</button>
           </div>
         )}
         <section className="dashboard-card system-dashboard-card">
@@ -1151,6 +1166,7 @@ function App() {
           ) : (
             <>
               <div className="dashboard-connection-debug">Build: {buildMarker} · Connected project: {supabaseProjectHost}</div>
+              <div className="dashboard-connection-debug">{dashboardDiagnostic}</div>
               <div className="dashboard-section-label">Restaurant Operations</div>
               <div className="system-stats-grid">
                 <button className="stat-card dashboard-stat-button" type="button" onClick={() => openRestaurants()}>
