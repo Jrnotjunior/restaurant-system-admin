@@ -691,12 +691,32 @@ function App() {
     setStaffActionId(staffId);
     setStaffActionError('');
 
-    const { error } = await supabase.rpc('system_admin_delete_restaurant_staff', {
-      p_staff_id: staffId,
+    const { data, error } = await supabase.functions.invoke('system-admin-delete-staff', {
+      body: { staffId },
     });
 
     if (error) {
-      setStaffActionError(error.message);
+      let message = error.message;
+
+      try {
+        const response = (error as { context?: Response }).context;
+        if (response) {
+          const responseBody = await response.clone().json() as { error?: unknown };
+          if (typeof responseBody.error === 'string' && responseBody.error.trim()) {
+            message = responseBody.error;
+          }
+        }
+      } catch {
+        // Keep the original FunctionsHttpError message if the response body cannot be parsed.
+      }
+
+      setStaffActionError(message);
+      setStaffActionId(null);
+      return;
+    }
+
+    if (data?.error) {
+      setStaffActionError(String(data.error));
       setStaffActionId(null);
       return;
     }
