@@ -99,7 +99,7 @@ export default function PlatformHealthPage({ onBack }: { onBack: () => void }) {
         </div>
         <div className="platform-health-header-actions"><button className="secondary-button" type="button" onClick={onBack}>Dashboard</button><button className="secondary-button" type="button" onClick={() => void runHealthCheck(false)} disabled={refreshing}>
           {refreshing ? 'Checking...' : 'Run health check'}
-        </button>
+        </button></div>
       </header>
 
       <section className="dashboard-card platform-health-card">
