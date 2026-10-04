@@ -858,7 +858,7 @@ function App() {
         </header>
         {accountMenuOpen && (
           <div className="account-menu">
-            <div className="account-menu-header"><span>System Administrator</span><strong>Owner</strong></div>
+            <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
             <button className="account-menu-item" onClick={() => setAccountMenuOpen(false)}>System Administrators</button>
             <button className="account-menu-item" onClick={signOut}>Sign out</button>
           </div>
@@ -1439,9 +1439,9 @@ function App() {
                   <strong>{selectedRestaurant.is_active ? 'Restaurant is active' : 'Restaurant is inactive'}</strong>
                   <span>{selectedRestaurant.is_active ? 'Customers can access this restaurant.' : 'Customers cannot access this restaurant while inactive.'}</span>
                 </div>
-                <button className={selectedRestaurant.is_active ? 'danger-button' : 'secondary-button'} onClick={() => setPendingRestaurantStatus(selectedRestaurant)}>
+                {canManage && <button className={selectedRestaurant.is_active ? 'danger-button' : 'secondary-button'} onClick={() => setPendingRestaurantStatus(selectedRestaurant)}>
                   {selectedRestaurant.is_active ? 'Deactivate restaurant' : 'Activate restaurant'}
-                </button>
+                </button>}
               </div>
             </div>
 
@@ -1464,10 +1464,14 @@ function App() {
                     <button className="danger-button" onClick={() => { setOwnerError(''); setPendingRemoveOwner(true); }} disabled={ownerSaving}>Remove owner</button>
                   </div>
                 ) : (
+                  canManage ? (
                   <div className="owner-form">
                     <label>Owner account email<input type="email" value={ownerEmail} onChange={(event) => setOwnerEmail(event.target.value)} placeholder="owner@example.com" /></label>
                     <button onClick={() => { setOwnerError(''); setPendingAssignOwner(true); }} disabled={ownerSaving || !ownerEmail.trim()}>Assign owner</button>
                   </div>
+                  ) : (
+                    <div className="empty-state">No restaurant owner is assigned. View Only access cannot change ownership.</div>
+                  )
                 )}
                 {ownerError && <div className="error-banner">{ownerError}</div>}
               </div>
@@ -1490,7 +1494,7 @@ function App() {
                   <span className={domain ? 'status active' : 'status inactive'}>{domain ? 'Configured' : 'Not configured'}</span>
                 </div>
 
-                <div className="domain-form">
+                {canManage && <div className="domain-form">
                   <label>
                     Custom domain
                     <input value={domain} onChange={(event) => setDomain(event.target.value)} placeholder="restaurant.com" />
@@ -1498,7 +1502,8 @@ function App() {
                   <button onClick={() => { setDomainError(''); setPendingSaveDomain(true); }} disabled={domainSaving || !domain.trim()}>
                     {domainSaving ? 'Saving...' : 'Save domain'}
                   </button>
-                </div>
+                </div>}
+                {!canManage && <div className="empty-state">View Only access can view the domain configuration but cannot change it.</div>}
                 <div className="domain-help">
                   Add a custom domain only when one is available. Enter only the hostname, for example <strong>restaurant.com</strong>. Do not include https:// or a path.
                 </div>
@@ -1588,6 +1593,7 @@ function App() {
                             type="checkbox"
                             checked={vatRegistered}
                             onChange={(event) => setVatRegistered(event.target.checked)}
+                            disabled={!canManage}
                           />
                           <span className="toggle-switch" aria-hidden="true"><span /></span>
                           <span className="toggle-label">{vatRegistered ? 'Enabled' : 'Disabled'}</span>
@@ -1596,7 +1602,7 @@ function App() {
                       <div className="detail-item">
                         <span>VAT rate</span>
                         <label>
-                          <input type="number" min="0" max="100" step="0.01" value={vatRate} onChange={(event) => setVatRate(event.target.value)} />
+                          <input type="number" min="0" max="100" step="0.01" value={vatRate} onChange={(event) => setVatRate(event.target.value)} disabled={!canManage} />
                         </label>
                       </div>
                       <div className="detail-item">
@@ -1607,6 +1613,7 @@ function App() {
                             type="checkbox"
                             checked={pricesVatInclusive}
                             onChange={(event) => setPricesVatInclusive(event.target.checked)}
+                            disabled={!canManage}
                           />
                           <span className="toggle-switch" aria-hidden="true"><span /></span>
                           <span className="toggle-label">{pricesVatInclusive ? 'Enabled' : 'Disabled'}</span>
@@ -1620,6 +1627,7 @@ function App() {
                             type="checkbox"
                             checked={cashOnDeliveryEnabled}
                             onChange={(event) => setCashOnDeliveryEnabled(event.target.checked)}
+                            disabled={!canManage}
                           />
                           <span className="toggle-switch" aria-hidden="true"><span /></span>
                           <span className="toggle-label">{cashOnDeliveryEnabled ? 'Enabled' : 'Disabled'}</span>
@@ -1633,6 +1641,7 @@ function App() {
                             type="checkbox"
                             checked={automaticRiderAssignmentEnabled}
                             onChange={(event) => setAutomaticRiderAssignmentEnabled(event.target.checked)}
+                            disabled={!canManage}
                           />
                           <span className="toggle-switch" aria-hidden="true"><span /></span>
                           <span className="toggle-label">{automaticRiderAssignmentEnabled ? 'Enabled' : 'Disabled'}</span>
@@ -1647,9 +1656,9 @@ function App() {
                         <strong>Platform-level restaurant controls</strong>
                         <span>System Administrator changes are saved through protected database functions.</span>
                       </div>
-                      <button onClick={() => setPendingSaveSettings(true)} disabled={settingsSaving}>
+                      {canManage && <button onClick={() => setPendingSaveSettings(true)} disabled={settingsSaving}>
                         {settingsSaving ? 'Saving...' : 'Save settings'}
-                      </button>
+                      </button>}
                     </div>
                   </>
                 )}
@@ -1988,10 +1997,10 @@ function App() {
 
                 <div className="row-actions">
                   <button className="secondary-button" onClick={() => openRestaurant(restaurant)}>Manage</button>
-                  <button className="secondary-button" onClick={() => startEdit(restaurant)}>Edit</button>
-                  <button className={restaurant.is_active ? 'danger-button' : 'secondary-button'} onClick={() => setPendingRestaurantStatus(restaurant)}>
+                  {canManage && <button className="secondary-button" onClick={() => startEdit(restaurant)}>Edit</button>}
+                  {canManage && <button className={restaurant.is_active ? 'danger-button' : 'secondary-button'} onClick={() => setPendingRestaurantStatus(restaurant)}>
                     {restaurant.is_active ? 'Deactivate' : 'Activate'}
-                  </button>
+                  </button>}
                 </div>
               </article>
             ))}
