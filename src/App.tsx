@@ -184,10 +184,19 @@ function App() {
       setAdminAccessLevel(null);
       return null;
     }
+
     const access = Array.isArray(data) ? data[0] : data;
     const level = access?.access_level as 'owner' | 'administrator' | 'view_only' | undefined;
-    setAdminAccessLevel(level ?? null);
-    return level ?? null;
+    const isActive = access?.is_active === true;
+    const isActiveStatus = access?.status === 'active';
+
+    if (!level || !isActive || !isActiveStatus) {
+      setAdminAccessLevel(null);
+      return null;
+    }
+
+    setAdminAccessLevel(level);
+    return level;
   }
 
   async function loadAdministrators() {
