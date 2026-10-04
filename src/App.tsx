@@ -560,13 +560,16 @@ function App() {
     }
 
 
-    if (adminPage === 'dashboard') {
+  if (adminPage === 'dashboard') {
     return (
       <main className="admin-shell">
         <header className="admin-header">
           <div className="brand-block">
             <img className="company-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
-            <div><div className="eyebrow">WEB2TABLE Platform</div><h1>System Admin</h1></div>
+            <div>
+              <div className="eyebrow">WEB2TABLE Platform</div>
+              <h1>System Admin</h1>
+            </div>
           </div>
           <div className="admin-header-actions">
             <button className="admin-icon-button active" onClick={openDashboard} title="Dashboard" aria-label="Dashboard"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></button>
@@ -584,7 +587,11 @@ function App() {
         )}
         <section className="dashboard-card system-dashboard-card">
           <div className="section-heading">
-            <div><div className="eyebrow">Platform Overview</div><h2>Dashboard</h2><p>Monitor restaurants, administrator access, and recent platform activity.</p></div>
+            <div>
+              <div className="eyebrow">Platform Overview</div>
+              <h2>Dashboard</h2>
+              <p>Monitor restaurants, administrator access, and recent platform activity.</p>
+            </div>
           </div>
           {dashboardError && <div className="error-banner">{dashboardError}</div>}
           {dashboardLoading && !dashboardSummary ? (
@@ -604,7 +611,10 @@ function App() {
               </div>
               <div className="dashboard-activity">
                 <div className="dashboard-activity-heading">
-                  <div><div className="eyebrow">Accountability</div><h3>Recent Platform Activity</h3></div>
+                  <div>
+                    <div className="eyebrow">Accountability</div>
+                    <h3>Recent Platform Activity</h3>
+                  </div>
                   <button className="secondary-button" type="button" onClick={openAuditLogs}>View Audit Logs</button>
                 </div>
                 {dashboardRecentLogs.length === 0 ? (
@@ -613,7 +623,10 @@ function App() {
                   <div className="dashboard-activity-list">
                     {dashboardRecentLogs.map((log) => (
                       <button className="dashboard-activity-row" type="button" key={log.id} onClick={() => { setAdminPage('audit'); setSelectedAuditLog(log); }}>
-                        <div><strong>{log.action}</strong><span>{log.admin_name || log.admin_email || 'Unknown administrator'}{log.restaurant_name ? ` • ${log.restaurant_name}` : ''}</span></div>
+                        <div>
+                          <strong>{log.action}</strong>
+                          <span>{log.admin_name || log.admin_email || 'Unknown administrator'}{log.restaurant_name ? ` • ${log.restaurant_name}` : ''}</span>
+                        </div>
                         <time>{new Date(log.created_at).toLocaleString()}</time>
                       </button>
                     ))}
@@ -626,389 +639,6 @@ function App() {
       </main>
     );
   }
-
-  if (selectedRestaurant) {
-      await loadRestaurantStaff(selectedRestaurant.id);
-    }
-
-    setStaffActionId(null);
-  }
-
-  function requestDeleteRestaurantStaff(staff: typeof restaurantStaff[number]) {
-    setStaffActionError('');
-    setPendingDeleteStaff(staff);
-  }
-
-  async function confirmDeleteRestaurantStaff() {
-    if (!pendingDeleteStaff) return;
-
-    const staffId = pendingDeleteStaff.id;
-    setStaffActionId(staffId);
-    setStaffActionError('');
-
-    const { error } = await supabase.rpc('system_admin_delete_restaurant_staff', {
-      p_staff_id: staffId,
-    });
-
-    if (error) {
-      setStaffActionError(error.message);
-      setStaffActionId(null);
-      return;
-    }
-
-    setPendingDeleteStaff(null);
-
-    if (selectedRestaurant) {
-      await loadRestaurantStaff(selectedRestaurant.id);
-    }
-
-    setStaffActionId(null);
-  }
-
-  async function saveDomain() {
-    if (!selectedRestaurant) return;
-    setDomainSaving(true);
-    setDomainError('');
-    const { data, error } = await supabase.rpc('system_admin_set_restaurant_domain', {
-      p_restaurant_id: selectedRestaurant.id,
-      p_custom_domain: domain.trim(),
-    });
-    if (error) {
-      setDomainError(error.message);
-    } else {
-      setDomain(typeof data === 'string' ? data : domain.trim().toLowerCase());
-      setPendingSaveDomain(false);
-    }
-    setDomainSaving(false);
-  }
-
-  async function loadRestaurantOwner(restaurantId: string) {
-    setOwnerLoading(true);
-    setOwnerError('');
-    const { data, error } = await supabase.rpc('system_admin_get_restaurant_owner', { p_restaurant_id: restaurantId });
-    if (error) {
-      setOwnerError(error.message);
-      setOwnerEmail('');
-      setOwnerName('');
-      setOwnerUserId('');
-    } else {
-      const owner = Array.isArray(data) ? data[0] : data;
-      setOwnerEmail(owner?.email ?? '');
-      setOwnerName(owner?.full_name ?? '');
-      setOwnerUserId(owner?.user_id ?? '');
-    }
-    setOwnerLoading(false);
-  }
-
-  async function assignOwner() {
-    if (!selectedRestaurant || !ownerEmail.trim()) return;
-    setOwnerSaving(true);
-    setOwnerError('');
-    const { data, error } = await supabase.rpc('system_admin_assign_restaurant_owner', {
-      p_restaurant_id: selectedRestaurant.id,
-      p_email: ownerEmail.trim(),
-    });
-    if (error) {
-      setOwnerError(error.message);
-      setOwnerSaving(false);
-      return;
-    }
-    const owner = Array.isArray(data) ? data[0] : data;
-    setOwnerEmail(owner?.email ?? ownerEmail.trim());
-    setOwnerName(owner?.full_name ?? '');
-    setOwnerUserId(owner?.user_id ?? '');
-    setOwnerSaving(false);
-    setPendingAssignOwner(false);
-  }
-
-  async function removeOwner() {
-    if (!selectedRestaurant) return;
-    setOwnerSaving(true);
-    setOwnerError('');
-    const { error } = await supabase.rpc('system_admin_remove_restaurant_owner', { p_restaurant_id: selectedRestaurant.id });
-    if (error) {
-      setOwnerError(error.message);
-    } else {
-      setOwnerEmail('');
-      setOwnerName('');
-      setOwnerUserId('');
-      setPendingRemoveOwner(false);
-    }
-    setOwnerSaving(false);
-  }
-
-  async function loadDashboard() {
-    setDashboardLoading(true);
-    setDashboardError('');
-
-    const [summaryResult, logsResult] = await Promise.all([
-      supabase.rpc('system_admin_get_dashboard_summary'),
-      supabase.rpc('system_admin_get_audit_logs', {
-        p_restaurant_id: null,
-        p_event_type: null,
-        p_limit: 6,
-        p_offset: 0,
-        p_search: null,
-        p_start_date: null,
-        p_end_date: null,
-      }),
-    ]);
-
-    if (summaryResult.error) {
-      setDashboardError(summaryResult.error.message);
-    } else {
-      const summary = Array.isArray(summaryResult.data) ? summaryResult.data[0] : summaryResult.data;
-      setDashboardSummary(summary ?? null);
-    }
-
-    if (logsResult.error) {
-      setDashboardError((current) => current || logsResult.error.message);
-      setDashboardRecentLogs([]);
-    } else {
-      setDashboardRecentLogs((Array.isArray(logsResult.data) ? logsResult.data : []) as typeof auditLogs);
-    }
-
-    setDashboardLoading(false);
-  }
-
-  async function loadAuditLogs(pageNumber = auditPageNumber) {
-    setAuditLoading(true);
-    setAuditError('');
-
-    const now = new Date();
-    let startDate: string | null = null;
-    let endDate: string | null = null;
-
-    if (auditDatePreset === 'TODAY') {
-      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const end = new Date(start);
-      end.setDate(end.getDate() + 1);
-      startDate = start.toISOString();
-      endDate = end.toISOString();
-    } else if (auditDatePreset === '7_DAYS') {
-      const start = new Date(now);
-      start.setHours(0, 0, 0, 0);
-      start.setDate(start.getDate() - 6);
-      const end = new Date(now);
-      end.setHours(0, 0, 0, 0);
-      end.setDate(end.getDate() + 1);
-      startDate = start.toISOString();
-      endDate = end.toISOString();
-    } else if (auditDatePreset === '30_DAYS') {
-      const start = new Date(now);
-      start.setHours(0, 0, 0, 0);
-      start.setDate(start.getDate() - 29);
-      const end = new Date(now);
-      end.setHours(0, 0, 0, 0);
-      end.setDate(end.getDate() + 1);
-      startDate = start.toISOString();
-      endDate = end.toISOString();
-    } else if (auditDatePreset === 'CUSTOM') {
-      if (auditStartDate) startDate = new Date(auditStartDate + 'T00:00:00').toISOString();
-      if (auditEndDate) {
-        const end = new Date(auditEndDate + 'T00:00:00');
-        end.setDate(end.getDate() + 1);
-        endDate = end.toISOString();
-      }
-    }
-
-    const pageSize = 50;
-    const { data, error } = await supabase.rpc('system_admin_get_audit_logs', {
-      p_restaurant_id: null,
-      p_event_type: auditEventFilter === 'ALL' ? null : auditEventFilter,
-      p_limit: pageSize,
-      p_offset: pageNumber * pageSize,
-      p_search: auditSearch.trim() || null,
-      p_start_date: startDate,
-      p_end_date: endDate,
-    });
-
-    if (error) {
-      setAuditError(error.message);
-      setAuditLogs([]);
-      setAuditHasMore(false);
-    } else {
-      const logs = (Array.isArray(data) ? data : []) as typeof auditLogs;
-      setAuditLogs(logs);
-      setAuditHasMore(logs.length === pageSize);
-      setAuditPageNumber(pageNumber);
-    }
-
-    setAuditLoading(false);
-  }
-
-  function openDashboard() {
-    setSelectedRestaurant(null);
-    setAccountMenuOpen(false);
-    setAdminPage('dashboard');
-    void loadDashboard();
-  }
-
-  function openRestaurants() {
-    setSelectedRestaurant(null);
-    setAccountMenuOpen(false);
-    setAdminPage('restaurants');
-    void loadRestaurants();
-  }
-
-  function openAuditLogs() {
-    setSelectedRestaurant(null);
-    setAdminPage('audit');
-    setAuditPageNumber(0);
-    void loadAuditLogs(0);
-  }
-
-  async function loadRestaurants() {
-    setRestaurantLoading(true);
-    setRestaurantError('');
-
-    const { data, error } = await supabase
-      .from('restaurants')
-      .select('id,owner_id,custom_domain,slug,name,tagline,logo_url,location_text,contact_number,email,is_active,created_at,updated_at')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      setRestaurantError(error.message);
-      setRestaurants([]);
-    } else {
-      setRestaurants((data ?? []) as Restaurant[]);
-    }
-
-    setRestaurantLoading(false);
-  }
-
-  useEffect(() => {
-    if (!authorized) return;
-
-    void loadRestaurants();
-
-    const channel = supabase
-      .channel('system-admin-restaurants')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'restaurants' },
-        (payload) => {
-          const newRow = payload.new as Restaurant;
-          const oldRow = payload.old as Restaurant;
-
-          setRestaurants((current) => {
-            if (payload.eventType === 'INSERT') {
-              if (current.some((restaurant) => restaurant.id === newRow.id)) return current;
-              return [newRow, ...current];
-            }
-
-            if (payload.eventType === 'UPDATE') {
-              return current
-                .map((restaurant) => restaurant.id === newRow.id ? newRow : restaurant)
-                .sort((a, b) => b.created_at.localeCompare(a.created_at));
-            }
-
-            if (payload.eventType === 'DELETE') {
-              return current.filter((restaurant) => restaurant.id !== oldRow.id);
-            }
-
-            return current;
-          });
-
-          if (payload.eventType === 'UPDATE' && selectedRestaurant?.id === newRow.id) {
-            setSelectedRestaurant(newRow);
-          }
-
-          if (payload.eventType === 'DELETE' && selectedRestaurant?.id === oldRow.id) {
-            setSelectedRestaurant(null);
-          }
-        },
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [authorized, selectedRestaurant?.id]);
-
-  useEffect(() => {
-    if (!authorized || adminPage !== 'audit') return;
-
-    const channel = supabase
-      .channel('system-admin-audit-logs')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'system_admin_audit_logs' },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            const newLog = payload.new as typeof auditLogs[number];
-            setAuditLogs((current) => {
-              if (current.some((log) => log.id === newLog.id)) return current;
-              return [newLog, ...current];
-            });
-          }
-
-          if (payload.eventType === 'UPDATE') {
-            const updatedLog = payload.new as typeof auditLogs[number];
-            setAuditLogs((current) =>
-              current
-                .map((log) => log.id === updatedLog.id ? updatedLog : log)
-                .sort((a, b) => b.created_at.localeCompare(a.created_at)),
-            );
-          }
-
-          if (payload.eventType === 'DELETE') {
-            const deletedLog = payload.old as typeof auditLogs[number];
-            setAuditLogs((current) => current.filter((log) => log.id !== deletedLog.id));
-          }
-        },
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [authorized, adminPage]);
-
-  useEffect(() => {
-    if (!authorized || adminPage !== 'audit') return;
-    setAuditPageNumber(0);
-    void loadAuditLogs(0);
-  }, [authorized, adminPage, auditSearch, auditEventFilter, auditDatePreset, auditStartDate, auditEndDate]);
-
-  useEffect(() => {
-    if (!authorized || adminPage !== 'dashboard') return;
-    void loadDashboard();
-  }, [authorized, adminPage]);
-
-  const filteredAuditLogs = auditLogs;
-
-  function resetAuditFiltersAndReload() {
-    setAuditPageNumber(0);
-    void loadAuditLogs(0);
-  }
-
-  function exportAuditLogs() {
-    const headers = ['Date & Time', 'Administrator', 'Restaurant', 'Event', 'Action', 'Entity', 'Details'];
-    const escapeCsv = (value: unknown) => '"' + String(value ?? '').replaceAll('"', '""') + '"';
-    const rows = filteredAuditLogs.map((log) => [
-      new Date(log.created_at).toLocaleString(), log.admin_name || log.admin_email || 'Unknown administrator',
-      log.restaurant_name || '', log.event_type, log.action, log.entity_type || '', JSON.stringify(log.details ?? {}),
-    ]);
-    const csv = [headers, ...rows].map((row) => row.map(escapeCsv).join(',')).join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url; link.download = `web2table-audit-logs-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
-  }
-
-  const filteredRestaurants = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return restaurants;
-
-    return restaurants.filter((restaurant) =>
-      [restaurant.name, restaurant.slug, restaurant.location_text ?? '', restaurant.email ?? '']
-        .join(' ')
-        .toLowerCase()
-        .includes(term),
-    );
-  }, [restaurants, search]);
 
   if (adminPage === 'administrators') {
     return (
