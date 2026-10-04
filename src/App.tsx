@@ -2164,8 +2164,8 @@ function App() {
               </div>
             </div>
           ) : manageTab === 'package' ? (
-            <div className="manage-overview">
-              <div className="overview-section">
+            <div className="manage-overview package-access-page">
+              <div className="overview-section package-access-section">
                 <div className="eyebrow">Package & Access</div>
                 <h3>Restaurant package</h3>
                 <p>Choose the package for this restaurant. The package automatically controls the available modules; individual included modules can be disabled when needed.</p>
@@ -2176,7 +2176,7 @@ function App() {
                   <>
                     {packageError && <div className="error-banner">{packageError}</div>}
 
-                    <div className="status-panel">
+                    <div className="status-panel package-current-panel">
                       <div>
                         <strong>{restaurantPackageRows[0]?.package_name || 'No package assigned'}</strong>
                         <span>{restaurantPackageRows[0]?.package_description || 'Assign a package to activate restaurant modules.'}</span>
@@ -2187,7 +2187,7 @@ function App() {
                     </div>
 
                     {canManage && (
-                      <div className="domain-form">
+                      <div className="domain-form package-selector">
                         <label>
                           Package
                           <select
@@ -2213,7 +2213,7 @@ function App() {
                       </div>
                     )}
 
-                    <div className="overview-section">
+                    <div className="overview-section package-modules-section">
                       <div className="eyebrow">Included Modules</div>
                       <h3>Module access</h3>
                       <div className="detail-grid">
@@ -2242,7 +2242,7 @@ function App() {
                       </div>
                     </div>
 
-                    <div className="status-panel">
+                    <div className="status-panel package-controls-panel">
                       <div>
                         <strong>Package controls</strong>
                         <span>{canManage ? 'Changing the package resets module overrides to the package defaults.' : 'View Only access can review the package but cannot change access.'}</span>
