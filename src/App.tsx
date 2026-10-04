@@ -1707,7 +1707,7 @@ function App() {
           </div>
         )}
 
-        <button className="back-button" onClick={closeRestaurant}>← Back to restaurants</button>
+        <button className="back-button" onClick={() => closeRestaurant()}>← Back to restaurants</button>
 
         <section className="dashboard-card restaurant-manage-card">
           <div className="restaurant-manage-hero">
