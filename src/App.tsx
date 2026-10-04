@@ -1392,7 +1392,7 @@ function App() {
   }
 
   if (isAdminPage(adminPage, 'health')) {
-    return <PlatformHealthPage />;
+    return <PlatformHealthPage onBack={() => openDashboard()} />;
   }
 
   if (isAdminPage(adminPage, 'dashboard')) {
