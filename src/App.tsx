@@ -491,45 +491,6 @@ function App() {
   useEffect(() => {
     let active = true;
 
-    const logoutRequested = new URLSearchParams(window.location.search).get('logout') === '1';
-
-    if (logoutRequested) {
-      void (async () => {
-        try {
-          await supabase.auth.signOut({ scope: 'local' });
-        } catch (error) {
-          console.error('System Administrator logout request failed:', error);
-        }
-
-        try {
-          const projectRef = new URL(import.meta.env.VITE_SUPABASE_URL).hostname.split('.')[0];
-          const key = `sb-${projectRef}-auth-token`;
-          window.localStorage.removeItem(key);
-          window.sessionStorage.removeItem(key);
-        } catch (error) {
-          console.error('Unable to clear local System Admin session:', error);
-        }
-
-        if (!active) return;
-
-        setSignedIn(false);
-        setAuthorized(false);
-        setAdminAccessLevel(null);
-        setAccountMenuOpen(false);
-        setRestaurants([]);
-        setSelectedRestaurant(null);
-        setSelectedAuditLog(null);
-        setAdminPage('dashboard');
-        setLoading(false);
-
-        window.history.replaceState({}, document.title, window.location.pathname);
-      })();
-
-      return () => {
-        active = false;
-      };
-    }
-
     checkAdminSession().then(() => {
       if (!active) return;
     });
@@ -588,32 +549,13 @@ function App() {
   }
 
   async function signOut() {
-    setAccountMenuOpen(false);
+    await recordAuthAuditEvent(
+      'LOGOUT',
+      'System Administrator signed out',
+      { source: 'system_admin_web_app' },
+    );
 
-    const { error } = await supabase.auth.signOut({ scope: 'local' });
-
-    if (error) {
-      console.error('System Administrator local sign out failed:', error);
-    }
-
-    try {
-      const projectRef = new URL(import.meta.env.VITE_SUPABASE_URL).hostname.split('.')[0];
-      const key = `sb-${projectRef}-auth-token`;
-      window.localStorage.removeItem(key);
-      window.sessionStorage.removeItem(key);
-    } catch (error) {
-      console.error('Unable to clear local System Admin session:', error);
-    }
-
-    setSignedIn(false);
-    setAuthorized(false);
-    setAdminAccessLevel(null);
-    setRestaurants([]);
-    setSelectedRestaurant(null);
-    setSelectedAuditLog(null);
-    setAdminPage('dashboard');
-
-    window.history.replaceState({}, document.title, window.location.pathname);
+    await supabase.auth.signOut();
   }
 
   async function loadRestaurantSettings(restaurantId: string) {
@@ -1198,7 +1140,8 @@ function App() {
         {accountMenuOpen && (
           <div className="account-menu">
             <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
-            {adminAccessLevel === 'owner' && <a className="account-menu-item" href="?logout=1">Sign out</a>
+            {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
+            <button type="button" className="account-menu-item" onClick={(event) => { event.preventDefault(); event.stopPropagation(); void signOut(); }}>Sign out</button>
           </div>
         )}
         <section className="dashboard-card system-dashboard-card">
@@ -1337,7 +1280,8 @@ function App() {
         {accountMenuOpen && (
           <div className="account-menu">
             <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
-            <a className="account-menu-item" href="?logout=1">Sign out</a>
+            <button className="account-menu-item" onClick={() => setAccountMenuOpen(false)}>System Administrators</button>
+            <button className="account-menu-item" onClick={signOut}>Sign out</button>
           </div>
         )}
         <section className="dashboard-card administrators-card">
@@ -1474,7 +1418,8 @@ function App() {
         {accountMenuOpen && (
           <div className="account-menu">
             <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
-            {adminAccessLevel === 'owner' && <a className="account-menu-item" href="?logout=1">Sign out</a>
+            {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
+            <button className="account-menu-item" onClick={signOut}>Sign out</button>
           </div>
         )}
 
@@ -1908,7 +1853,8 @@ function App() {
         {accountMenuOpen && (
           <div className="account-menu">
             <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
-            {adminAccessLevel === 'owner' && <a className="account-menu-item" href="?logout=1">Sign out</a>
+            {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
+            <button className="account-menu-item" onClick={signOut}>Sign out</button>
           </div>
         )}
 
@@ -2464,7 +2410,8 @@ function App() {
         {accountMenuOpen && (
           <div className="account-menu">
             <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
-            {adminAccessLevel === 'owner' && <a className="account-menu-item" href="?logout=1">Sign out</a>
+            {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
+            <button className="account-menu-item" onClick={signOut}>Sign out</button>
           </div>
         )}
 
