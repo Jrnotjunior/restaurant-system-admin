@@ -46,8 +46,6 @@ const emptyForm: RestaurantForm = {
 };
 
 function App() {
-  const supabaseProjectHost = import.meta.env.VITE_SUPABASE_URL ? new URL(import.meta.env.VITE_SUPABASE_URL).host : 'not configured';
-  const buildMarker = '2026-10-04-FIX-4';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [signedIn, setSignedIn] = useState(false);
@@ -126,7 +124,6 @@ function App() {
   const [adminPage, setAdminPage] = useState<AdminPage>('dashboard');
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState('');
-  const [dashboardDiagnostic, setDashboardDiagnostic] = useState('');
   const [dashboardSummary, setDashboardSummary] = useState<{ total_restaurants: number; active_restaurants: number; inactive_restaurants: number; active_system_administrators: number; pending_system_administrators: number; } | null>(null);
   const [dashboardRestaurantMonitoring, setDashboardRestaurantMonitoring] = useState<Array<{
     restaurant_id: string;
@@ -757,7 +754,6 @@ function App() {
   async function loadDashboard(userId?: string) {
     setDashboardLoading(true);
     setDashboardError('');
-    setDashboardDiagnostic(`Signed-in user: ${userId ?? 'unknown'}`);
 
     const [summaryResult, monitoringResult, logsResult] = await Promise.all([
       supabase.rpc('system_admin_get_dashboard_summary'),
