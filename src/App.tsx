@@ -434,8 +434,8 @@ function App() {
 
     setAuthorized(true);
     setInviteSetup(false);
+    await loadDashboard(session.user.id);
     setLoading(false);
-    await loadDashboard();
     return true;
   }
 
@@ -518,7 +518,7 @@ function App() {
     event.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setLoading(false);
@@ -544,8 +544,8 @@ function App() {
     );
 
     setAuthorized(true);
+    await loadDashboard(signInData.user?.id);
     setLoading(false);
-    await loadDashboard();
   }
 
   async function signOut() {
@@ -754,14 +754,10 @@ function App() {
     setOwnerSaving(false);
   }
 
-  async function loadDashboard() {
+  async function loadDashboard(userId?: string) {
     setDashboardLoading(true);
     setDashboardError('');
-    setDashboardDiagnostic('');
-
-    const { data: userResult, error: userError } = await supabase.auth.getUser();
-    const userId = userResult.user?.id ?? 'none';
-    setDashboardDiagnostic(`Signed-in user: ${userId}${userError ? ` · Auth error: ${userError.message}` : ''}`);
+    setDashboardDiagnostic(`Signed-in user: ${userId ?? 'unknown'}`);
 
     const [summaryResult, monitoringResult, logsResult] = await Promise.all([
       supabase.rpc('system_admin_get_dashboard_summary'),
