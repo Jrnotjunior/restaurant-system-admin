@@ -518,6 +518,8 @@ function App() {
     }
 
 
+  const canManage = adminAccessLevel === 'owner' || adminAccessLevel === 'administrator';
+
   if (selectedRestaurant) {
       await loadRestaurantStaff(selectedRestaurant.id);
     }
@@ -1294,9 +1296,9 @@ function App() {
               <span className={selectedRestaurant.is_active ? 'status active' : 'status inactive'}>
                 {selectedRestaurant.is_active ? 'Active' : 'Inactive'}
               </span>
-              <button className="secondary-button" type="button" onClick={() => startEdit(selectedRestaurant)}>
+              {canManage && <button className="secondary-button" type="button" onClick={() => startEdit(selectedRestaurant)}>
                 Edit restaurant
-              </button>
+              </button>}
             </div>
           </div>
 
@@ -1435,8 +1437,7 @@ function App() {
                             <td>{staff.mobile_number || '—'}</td>
                             <td><span className={staff.is_active ? 'status active' : 'status inactive'}>{staff.is_active ? 'Active' : 'Inactive'}</span></td>
                             <td>
-                              <div className="staff-actions">
-                                <button
+                              <div className="staff-actions">{canManage && <><button
                                   className="secondary-button"
                                   type="button"
                                   onClick={() => void setRestaurantStaffActive(staff.id, !staff.is_active)}
@@ -1451,7 +1452,7 @@ function App() {
                                   disabled={staffActionId !== null}
                                 >
                                   {staffActionId === staff.id ? 'Working...' : 'Delete'}
-                                </button>
+                                </button></>}
                               </div>
                             </td>
                           </tr>
@@ -1818,7 +1819,7 @@ function App() {
             <h2>Restaurants</h2>
             <p>Manage restaurants connected to this ordering platform.</p>
           </div>
-          <button onClick={startCreate}>Add restaurant</button>
+          {canManage && <button onClick={startCreate}>Add restaurant</button>}
         </div>
 
         <div className="stats-row">
