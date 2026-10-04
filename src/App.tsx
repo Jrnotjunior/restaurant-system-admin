@@ -548,26 +548,19 @@ function App() {
     await loadDashboard();
   }
 
-  function signOut() {
+  async function signOut() {
     setAccountMenuOpen(false);
 
-    // Immediately leave the authenticated UI. Supabase logout is started
-    // in the background so a slow/hanging auth request cannot trap the user
-    // on the System Admin screen.
-    void supabase.auth.signOut({ scope: 'local' }).catch((error) => {
+    // Complete the local Supabase sign-out before reloading the app.
+    // Do not reload while the auth client is still clearing the session.
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
+
+    if (error) {
       console.error('System Administrator local sign out failed:', error);
-    });
+    }
 
-    setSignedIn(false);
-    setAuthorized(false);
-    setAdminAccessLevel(null);
-    setRestaurants([]);
-    setSelectedRestaurant(null);
-    setSelectedAuditLog(null);
-    setSelectedRestaurant(null);
-    setAdminPage('dashboard');
-
-    // Remove only this Supabase project's persisted auth session.
+    // Remove only this Supabase project's persisted auth session as an
+    // additional local cleanup step.
     try {
       const projectRef = new URL(import.meta.env.VITE_SUPABASE_URL).hostname.split('.')[0];
       const key = `sb-${projectRef}-auth-token`;
@@ -577,6 +570,16 @@ function App() {
       console.error('Unable to clear local System Admin session:', error);
     }
 
+    setSignedIn(false);
+    setAuthorized(false);
+    setAdminAccessLevel(null);
+    setRestaurants([]);
+    setSelectedRestaurant(null);
+    setSelectedAuditLog(null);
+    setAdminPage('dashboard');
+
+    // Return to the normal application entry point only after logout
+    // cleanup has completed.
     window.location.replace(window.location.pathname);
   }
 
