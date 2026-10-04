@@ -410,6 +410,20 @@ function App() {
       return false;
     }
 
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    });
+
+    if (sessionError) {
+      console.error('Unable to establish System Administrator auth session:', sessionError);
+      await supabase.auth.signOut();
+      setSignedIn(false);
+      setAuthorized(false);
+      setLoading(false);
+      return false;
+    }
+
     setSignedIn(true);
 
     if (isSystemAdminInvitation()) {
@@ -520,6 +534,23 @@ function App() {
     if (error) {
       setLoading(false);
       window.alert(error.message);
+      return;
+    }
+
+    if (!signInData.session) {
+      setLoading(false);
+      window.alert('Sign in succeeded but no authenticated session was established.');
+      return;
+    }
+
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token: signInData.session.access_token,
+      refresh_token: signInData.session.refresh_token,
+    });
+
+    if (sessionError) {
+      setLoading(false);
+      window.alert(sessionError.message);
       return;
     }
 
