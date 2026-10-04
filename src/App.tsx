@@ -866,7 +866,7 @@ function App() {
             <section className="modal-card administrator-invite-modal" role="dialog" aria-modal="true" aria-labelledby="invite-admin-title">
               <div className="modal-heading"><div><div className="eyebrow">System Administrator</div><h2 id="invite-admin-title">Invite Administrator</h2></div><button className="icon-button" type="button" onClick={() => setShowInviteAdmin(false)} disabled={inviteAdminSaving} aria-label="Close">×</button></div>
               <form className="restaurant-form" onSubmit={inviteAdministrator}>
-                <label>Email address<input type="email" value={inviteAdminEmail} onChange={(event) => setInviteAdminEmail(event.target.value)} placeholder="administrator@example.com" autoComplete="email" required /></label>
+                <label>Email address<input type="email" value={inviteAdminEmail} onChange={(event) => setInviteAdminEmail(event.target.value)}  autoComplete="email" required /></label>
                 <label>Access Level<select value={inviteAdminAccessLevel} onChange={(event) => setInviteAdminAccessLevel(event.target.value as 'administrator' | 'view_only')}><option value="administrator">Administrator — Full Access</option><option value="view_only">View Only</option></select></label>
                 <div className="administrator-invite-warning"><strong>The invitation will be emailed to this address.</strong><span>The account will remain pending until the invitee creates a password.</span></div>
                 {inviteAdminError && <div className="error-banner">{inviteAdminError}</div>}
