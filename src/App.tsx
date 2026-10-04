@@ -45,6 +45,11 @@ function App() {
   const [signedIn, setSignedIn] = useState(false);
   const [authorized, setAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [inviteSetup, setInviteSetup] = useState(false);
+  const [invitePassword, setInvitePassword] = useState('');
+  const [invitePasswordConfirm, setInvitePasswordConfirm] = useState('');
+  const [inviteSetupError, setInviteSetupError] = useState('');
+  const [inviteSettingPassword, setInviteSettingPassword] = useState(false);
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [restaurantLoading, setRestaurantLoading] = useState(false);
@@ -143,6 +148,12 @@ function App() {
     }
   }
 
+  function isSystemAdminInvitation() {
+    const queryParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    return queryParams.get('type') === 'invite' || hashParams.get('type') === 'invite';
+  }
+
   async function checkAdminSession() {
     const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData.session;
@@ -150,11 +161,19 @@ function App() {
     if (!session) {
       setSignedIn(false);
       setAuthorized(false);
+      setInviteSetup(false);
       setLoading(false);
       return false;
     }
 
     setSignedIn(true);
+
+    if (isSystemAdminInvitation()) {
+      setInviteSetup(true);
+      setInviteSetupError('');
+      setLoading(false);
+      return true;
+    }
 
     const { data: adminStatus, error } = await supabase.rpc('get_my_system_admin_status');
 
@@ -167,8 +186,58 @@ function App() {
     }
 
     setAuthorized(true);
+    setInviteSetup(false);
     setLoading(false);
     return true;
+  }
+
+  async function completeSystemAdminInvitation(event: FormEvent) {
+    event.preventDefault();
+    setInviteSetupError('');
+
+    if (invitePassword.length < 8) {
+      setInviteSetupError('Your password must be at least 8 characters.');
+      return;
+    }
+
+    if (invitePassword !== invitePasswordConfirm) {
+      setInviteSetupError('The passwords do not match.');
+      return;
+    }
+
+    setInviteSettingPassword(true);
+
+    const { error: passwordError } = await supabase.auth.updateUser({
+      password: invitePassword,
+    });
+
+    if (passwordError) {
+      setInviteSetupError(passwordError.message);
+      setInviteSettingPassword(false);
+      return;
+    }
+
+    const { error: activationError } = await supabase.rpc(
+      'system_admin_activate_my_pending_access',
+    );
+
+    if (activationError) {
+      setInviteSetupError(activationError.message);
+      setInviteSettingPassword(false);
+      return;
+    }
+
+    window.history.replaceState(
+      {},
+      document.title,
+      window.location.pathname,
+    );
+
+    setInvitePassword('');
+    setInvitePasswordConfirm('');
+    setInviteSetup(false);
+    setAuthorized(true);
+    setInviteSettingPassword(false);
   }
 
   useEffect(() => {
@@ -880,6 +949,47 @@ function App() {
   }
 
   if (loading) return <main className="screen-center">Loading...</main>;
+
+  if (inviteSetup) {
+    return (
+      <main className="auth-shell">
+        <section className="auth-card">
+          <img className="company-logo auth-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
+          <div className="eyebrow">WEB2TABLE Platform</div>
+          <h1>Set up your account</h1>
+          <p>You have been invited as a System Administrator. Create your password to activate your account.</p>
+          <form onSubmit={completeSystemAdminInvitation}>
+            <label>
+              Password
+              <input
+                type="password"
+                value={invitePassword}
+                onChange={(event) => setInvitePassword(event.target.value)}
+                autoComplete="new-password"
+                minLength={8}
+                required
+              />
+            </label>
+            <label>
+              Confirm password
+              <input
+                type="password"
+                value={invitePasswordConfirm}
+                onChange={(event) => setInvitePasswordConfirm(event.target.value)}
+                autoComplete="new-password"
+                minLength={8}
+                required
+              />
+            </label>
+            {inviteSetupError && <div className="error-banner">{inviteSetupError}</div>}
+            <button type="submit" disabled={inviteSettingPassword}>
+              {inviteSettingPassword ? 'Activating account...' : 'Create password & continue'}
+            </button>
+          </form>
+        </section>
+      </main>
+    );
+  }
 
   if (!signedIn) {
     return (
