@@ -46,6 +46,7 @@ const emptyForm: RestaurantForm = {
 };
 
 function App() {
+  const supabaseProjectHost = import.meta.env.VITE_SUPABASE_URL ? new URL(import.meta.env.VITE_SUPABASE_URL).host : 'not configured';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [signedIn, setSignedIn] = useState(false);
@@ -1148,6 +1149,7 @@ function App() {
             <div className="empty-state">Loading platform overview...</div>
           ) : (
             <>
+              <div className="dashboard-connection-debug">Connected project: {supabaseProjectHost}</div>
               <div className="dashboard-section-label">Restaurant Operations</div>
               <div className="system-stats-grid">
                 <button className="stat-card dashboard-stat-button" type="button" onClick={() => openRestaurants()}>
