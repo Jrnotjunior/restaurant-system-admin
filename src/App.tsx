@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { supabase } from './lib/supabase';
+import PlatformHealthPage from './components/PlatformHealthPage';
 
-type AdminPage = 'dashboard' | 'restaurants' | 'audit' | 'administrators';
+type AdminPage = 'dashboard' | 'restaurants' | 'audit' | 'administrators' | 'health';
 
 function isAdminPage(current: AdminPage, target: AdminPage) {
   return current === target;
@@ -282,10 +283,11 @@ function App() {
     if (page === 'restaurants') return { page: 'restaurants' as const, restaurantId: null, auditId: null };
     if (page === 'audit') return { page: 'audit' as const, restaurantId: null, auditId };
     if (page === 'administrators') return { page: 'administrators' as const, restaurantId: null, auditId: null };
+    if (page === 'health') return { page: 'health' as const, restaurantId: null, auditId: null };
     return { page: 'dashboard' as const, restaurantId: null, auditId: null };
   }
 
-  function pushNavigation(page: 'dashboard' | 'restaurants' | 'audit' | 'administrators' | 'restaurant', options: { restaurantId?: string; auditId?: string } = {}) {
+  function pushNavigation(page: 'dashboard' | 'restaurants' | 'audit' | 'administrators' | 'health' | 'restaurant', options: { restaurantId?: string; auditId?: string } = {}) {
     const params = new URLSearchParams();
     params.set('page', page);
     if (options.restaurantId) params.set('restaurantId', options.restaurantId);
@@ -323,6 +325,14 @@ function App() {
     } else if (navigation.page === 'administrators' && adminAccessLevel === 'owner') {
       void loadAdministrators();
     }
+  }
+
+  function openPlatformHealth(pushHistory = true) {
+    if (pushHistory) pushNavigation('health');
+    setAccountMenuOpen(false);
+    setSelectedRestaurant(null);
+    setSelectedAuditLog(null);
+    setAdminPage('health');
   }
 
   function openAdministrators(pushHistory = true) {
@@ -1381,6 +1391,10 @@ function App() {
     );
   }
 
+  if (isAdminPage(adminPage, 'health')) {
+    return <PlatformHealthPage />;
+  }
+
   if (isAdminPage(adminPage, 'dashboard')) {
     return (
       <main className="admin-shell">
@@ -1398,6 +1412,9 @@ function App() {
             </button>
             <button className={isAdminPage(adminPage, 'audit') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
+            </button>
+            <button className={isAdminPage(adminPage, 'health') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openPlatformHealth()} title="Platform Health" aria-label="Platform Health">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h4l2-6 4 12 2-6h4"/><path d="M4 20h16"/></svg>
             </button>
             <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
               <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
@@ -1536,6 +1553,9 @@ function App() {
             <button className={isAdminPage(adminPage, 'audit') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
             </button>
+            <button className={isAdminPage(adminPage, 'health') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openPlatformHealth()} title="Platform Health" aria-label="Platform Health">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h4l2-6 4 12 2-6h4"/><path d="M4 20h16"/></svg>
+            </button>
             <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
               <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
             </button>
@@ -1672,6 +1692,9 @@ function App() {
             </button>
             <button className={isAdminPage(adminPage, 'audit') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
+            </button>
+            <button className={isAdminPage(adminPage, 'health') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openPlatformHealth()} title="Platform Health" aria-label="Platform Health">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h4l2-6 4 12 2-6h4"/><path d="M4 20h16"/></svg>
             </button>
             <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
               <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
@@ -2030,6 +2053,9 @@ function App() {
             </button>
             <button className={isAdminPage(adminPage, 'audit') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
+            </button>
+            <button className={isAdminPage(adminPage, 'health') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openPlatformHealth()} title="Platform Health" aria-label="Platform Health">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h4l2-6 4 12 2-6h4"/><path d="M4 20h16"/></svg>
             </button>
             <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
               <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
@@ -2675,6 +2701,9 @@ function App() {
             </button>
             <button className={isAdminPage(adminPage, 'audit') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
+            </button>
+            <button className={isAdminPage(adminPage, 'health') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openPlatformHealth()} title="Platform Health" aria-label="Platform Health">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h4l2-6 4 12 2-6h4"/><path d="M4 20h16"/></svg>
             </button>
             <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
               <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
