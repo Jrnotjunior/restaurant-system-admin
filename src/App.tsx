@@ -115,7 +115,11 @@ function App() {
   const [pendingRemoveOwner, setPendingRemoveOwner] = useState(false);
   const [pendingRestaurantStatus, setPendingRestaurantStatus] = useState<Restaurant | null>(null);
   const [pendingRestaurantFormSave, setPendingRestaurantFormSave] = useState(false);
-  const [adminPage, setAdminPage] = useState<'restaurants' | 'audit' | 'administrators'>('restaurants');
+  const [adminPage, setAdminPage] = useState<'dashboard' | 'restaurants' | 'audit' | 'administrators'>('dashboard');
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+  const [dashboardError, setDashboardError] = useState('');
+  const [dashboardSummary, setDashboardSummary] = useState<{ total_restaurants: number; active_restaurants: number; inactive_restaurants: number; active_system_administrators: number; pending_system_administrators: number; } | null>(null);
+  const [dashboardRecentLogs, setDashboardRecentLogs] = useState<typeof auditLogs>([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState('');
   const [auditLogs, setAuditLogs] = useState<Array<{
@@ -556,7 +560,74 @@ function App() {
     }
 
 
-    if (selectedRestaurant) {
+    if (adminPage === 'dashboard') {
+    return (
+      <main className="admin-shell">
+        <header className="admin-header">
+          <div className="brand-block">
+            <img className="company-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
+            <div><div className="eyebrow">WEB2TABLE Platform</div><h1>System Admin</h1></div>
+          </div>
+          <div className="admin-header-actions">
+            <button className="admin-icon-button active" onClick={openDashboard} title="Dashboard" aria-label="Dashboard"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></button>
+            <button className="admin-icon-button" onClick={openRestaurants} title="Restaurants" aria-label="Restaurants"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V20h11V9.5M9.5 20v-6h5v6"/></svg></button>
+            <button className="admin-icon-button" onClick={openAuditLogs} title="Audit Logs" aria-label="Audit Logs"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg></button>
+            <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg></button>
+          </div>
+        </header>
+        {accountMenuOpen && (
+          <div className="account-menu">
+            <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
+            {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={openAdministrators}>System Administrators</button>}
+            <button className="account-menu-item" onClick={signOut}>Sign out</button>
+          </div>
+        )}
+        <section className="dashboard-card system-dashboard-card">
+          <div className="section-heading">
+            <div><div className="eyebrow">Platform Overview</div><h2>Dashboard</h2><p>Monitor restaurants, administrator access, and recent platform activity.</p></div>
+          </div>
+          {dashboardError && <div className="error-banner">{dashboardError}</div>}
+          {dashboardLoading && !dashboardSummary ? (
+            <div className="empty-state">Loading platform overview...</div>
+          ) : (
+            <>
+              <div className="dashboard-section-label">Restaurant Operations</div>
+              <div className="system-stats-grid">
+                <div className="stat-card"><span>Total restaurants</span><strong>{dashboardSummary?.total_restaurants ?? 0}</strong></div>
+                <div className="stat-card"><span>Active restaurants</span><strong>{dashboardSummary?.active_restaurants ?? 0}</strong></div>
+                <div className="stat-card"><span>Inactive restaurants</span><strong>{dashboardSummary?.inactive_restaurants ?? 0}</strong></div>
+              </div>
+              <div className="dashboard-section-label">System Administration</div>
+              <div className="system-stats-grid">
+                <div className="stat-card"><span>Active administrators</span><strong>{dashboardSummary?.active_system_administrators ?? 0}</strong></div>
+                <div className="stat-card"><span>Pending invitations</span><strong>{dashboardSummary?.pending_system_administrators ?? 0}</strong></div>
+              </div>
+              <div className="dashboard-activity">
+                <div className="dashboard-activity-heading">
+                  <div><div className="eyebrow">Accountability</div><h3>Recent Platform Activity</h3></div>
+                  <button className="secondary-button" type="button" onClick={openAuditLogs}>View Audit Logs</button>
+                </div>
+                {dashboardRecentLogs.length === 0 ? (
+                  <div className="empty-state">No recent platform activity.</div>
+                ) : (
+                  <div className="dashboard-activity-list">
+                    {dashboardRecentLogs.map((log) => (
+                      <button className="dashboard-activity-row" type="button" key={log.id} onClick={() => { setAdminPage('audit'); setSelectedAuditLog(log); }}>
+                        <div><strong>{log.action}</strong><span>{log.admin_name || log.admin_email || 'Unknown administrator'}{log.restaurant_name ? ` • ${log.restaurant_name}` : ''}</span></div>
+                        <time>{new Date(log.created_at).toLocaleString()}</time>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </section>
+      </main>
+    );
+  }
+
+  if (selectedRestaurant) {
       await loadRestaurantStaff(selectedRestaurant.id);
     }
 
@@ -666,6 +737,40 @@ function App() {
     setOwnerSaving(false);
   }
 
+  async function loadDashboard() {
+    setDashboardLoading(true);
+    setDashboardError('');
+
+    const [summaryResult, logsResult] = await Promise.all([
+      supabase.rpc('system_admin_get_dashboard_summary'),
+      supabase.rpc('system_admin_get_audit_logs', {
+        p_restaurant_id: null,
+        p_event_type: null,
+        p_limit: 6,
+        p_offset: 0,
+        p_search: null,
+        p_start_date: null,
+        p_end_date: null,
+      }),
+    ]);
+
+    if (summaryResult.error) {
+      setDashboardError(summaryResult.error.message);
+    } else {
+      const summary = Array.isArray(summaryResult.data) ? summaryResult.data[0] : summaryResult.data;
+      setDashboardSummary(summary ?? null);
+    }
+
+    if (logsResult.error) {
+      setDashboardError((current) => current || logsResult.error.message);
+      setDashboardRecentLogs([]);
+    } else {
+      setDashboardRecentLogs((Array.isArray(logsResult.data) ? logsResult.data : []) as typeof auditLogs);
+    }
+
+    setDashboardLoading(false);
+  }
+
   async function loadAuditLogs(pageNumber = auditPageNumber) {
     setAuditLoading(true);
     setAuditError('');
@@ -730,6 +835,20 @@ function App() {
     }
 
     setAuditLoading(false);
+  }
+
+  function openDashboard() {
+    setSelectedRestaurant(null);
+    setAccountMenuOpen(false);
+    setAdminPage('dashboard');
+    void loadDashboard();
+  }
+
+  function openRestaurants() {
+    setSelectedRestaurant(null);
+    setAccountMenuOpen(false);
+    setAdminPage('restaurants');
+    void loadRestaurants();
   }
 
   function openAuditLogs() {
@@ -851,6 +970,11 @@ function App() {
     setAuditPageNumber(0);
     void loadAuditLogs(0);
   }, [authorized, adminPage, auditSearch, auditEventFilter, auditDatePreset, auditStartDate, auditEndDate]);
+
+  useEffect(() => {
+    if (!authorized || adminPage !== 'dashboard') return;
+    void loadDashboard();
+  }, [authorized, adminPage]);
 
   const filteredAuditLogs = auditLogs;
 
