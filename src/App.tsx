@@ -1144,10 +1144,7 @@ function App() {
           {dashboardLoading && !dashboardSummary ? (
             <div className="empty-state">Loading platform overview...</div>
           ) : (
-            <>
-              <div className="dashboard-connection-debug">Build: {buildMarker} · Connected project: {supabaseProjectHost}</div>
-              <div className="dashboard-connection-debug">{dashboardDiagnostic}</div>
-              <div className="dashboard-section-label">Restaurant Operations</div>
+            <>              <div className="dashboard-section-label">Restaurant Operations</div>
               <div className="system-stats-grid">
                 <button className="stat-card dashboard-stat-button" type="button" onClick={() => openRestaurants()}>
                   <span>Total restaurants</span>
