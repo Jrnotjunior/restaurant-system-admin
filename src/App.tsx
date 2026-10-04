@@ -491,6 +491,45 @@ function App() {
   useEffect(() => {
     let active = true;
 
+    const logoutRequested = new URLSearchParams(window.location.search).get('logout') === '1';
+
+    if (logoutRequested) {
+      void (async () => {
+        try {
+          await supabase.auth.signOut({ scope: 'local' });
+        } catch (error) {
+          console.error('System Administrator logout request failed:', error);
+        }
+
+        try {
+          const projectRef = new URL(import.meta.env.VITE_SUPABASE_URL).hostname.split('.')[0];
+          const key = `sb-${projectRef}-auth-token`;
+          window.localStorage.removeItem(key);
+          window.sessionStorage.removeItem(key);
+        } catch (error) {
+          console.error('Unable to clear local System Admin session:', error);
+        }
+
+        if (!active) return;
+
+        setSignedIn(false);
+        setAuthorized(false);
+        setAdminAccessLevel(null);
+        setAccountMenuOpen(false);
+        setRestaurants([]);
+        setSelectedRestaurant(null);
+        setSelectedAuditLog(null);
+        setAdminPage('dashboard');
+        setLoading(false);
+
+        window.history.replaceState({}, document.title, window.location.pathname);
+      })();
+
+      return () => {
+        active = false;
+      };
+    }
+
     checkAdminSession().then(() => {
       if (!active) return;
     });
@@ -551,16 +590,12 @@ function App() {
   async function signOut() {
     setAccountMenuOpen(false);
 
-    // Complete the local Supabase sign-out before reloading the app.
-    // Do not reload while the auth client is still clearing the session.
     const { error } = await supabase.auth.signOut({ scope: 'local' });
 
     if (error) {
       console.error('System Administrator local sign out failed:', error);
     }
 
-    // Remove only this Supabase project's persisted auth session as an
-    // additional local cleanup step.
     try {
       const projectRef = new URL(import.meta.env.VITE_SUPABASE_URL).hostname.split('.')[0];
       const key = `sb-${projectRef}-auth-token`;
@@ -578,9 +613,7 @@ function App() {
     setSelectedAuditLog(null);
     setAdminPage('dashboard');
 
-    // Return to the normal application entry point only after logout
-    // cleanup has completed.
-    window.location.replace(window.location.pathname);
+    window.history.replaceState({}, document.title, window.location.pathname);
   }
 
   async function loadRestaurantSettings(restaurantId: string) {
@@ -1165,20 +1198,7 @@ function App() {
         {accountMenuOpen && (
           <div className="account-menu">
             <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
-            {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
-            <button
-              type="button"
-              className="account-menu-item"
-              onPointerDown={(event) => {
-                event.preventDefault();
-                void signOut();
-              }}
-              onClick={(event) => {
-                event.preventDefault();
-              }}
-            >
-              Sign out
-            </button>
+            {adminAccessLevel === 'owner' && <a className="account-menu-item" href="?logout=1">Sign out</a>
           </div>
         )}
         <section className="dashboard-card system-dashboard-card">
@@ -1317,20 +1337,7 @@ function App() {
         {accountMenuOpen && (
           <div className="account-menu">
             <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
-            <button className="account-menu-item" onClick={() => setAccountMenuOpen(false)}>System Administrators</button>
-            <button
-                type="button"
-                className="account-menu-item"
-                onPointerDown={(event) => {
-                  event.preventDefault();
-                  void signOut();
-                }}
-                onClick={(event) => {
-                  event.preventDefault();
-                }}
-              >
-                Sign out
-              </button>
+            <a className="account-menu-item" href="?logout=1">Sign out</a>
           </div>
         )}
         <section className="dashboard-card administrators-card">
@@ -1467,20 +1474,7 @@ function App() {
         {accountMenuOpen && (
           <div className="account-menu">
             <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
-            {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
-            <button
-                type="button"
-                className="account-menu-item"
-                onPointerDown={(event) => {
-                  event.preventDefault();
-                  void signOut();
-                }}
-                onClick={(event) => {
-                  event.preventDefault();
-                }}
-              >
-                Sign out
-              </button>
+            {adminAccessLevel === 'owner' && <a className="account-menu-item" href="?logout=1">Sign out</a>
           </div>
         )}
 
@@ -1914,20 +1908,7 @@ function App() {
         {accountMenuOpen && (
           <div className="account-menu">
             <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
-            {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
-            <button
-                type="button"
-                className="account-menu-item"
-                onPointerDown={(event) => {
-                  event.preventDefault();
-                  void signOut();
-                }}
-                onClick={(event) => {
-                  event.preventDefault();
-                }}
-              >
-                Sign out
-              </button>
+            {adminAccessLevel === 'owner' && <a className="account-menu-item" href="?logout=1">Sign out</a>
           </div>
         )}
 
@@ -2483,20 +2464,7 @@ function App() {
         {accountMenuOpen && (
           <div className="account-menu">
             <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
-            {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
-            <button
-                type="button"
-                className="account-menu-item"
-                onPointerDown={(event) => {
-                  event.preventDefault();
-                  void signOut();
-                }}
-                onClick={(event) => {
-                  event.preventDefault();
-                }}
-              >
-                Sign out
-              </button>
+            {adminAccessLevel === 'owner' && <a className="account-menu-item" href="?logout=1">Sign out</a>
           </div>
         )}
 
