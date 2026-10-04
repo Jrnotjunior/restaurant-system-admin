@@ -1461,7 +1461,7 @@ function App() {
                   <div className="owner-current">
                     <div className="owner-avatar">{(ownerName || ownerEmail).charAt(0).toUpperCase()}</div>
                     <div className="owner-current-details"><strong>{ownerName || 'Restaurant Owner'}</strong><span>{ownerEmail}</span><small>User ID: {ownerUserId}</small></div>
-                    <button className="danger-button" onClick={() => { setOwnerError(''); setPendingRemoveOwner(true); }} disabled={ownerSaving}>Remove owner</button>
+                    {canManage && <button className="danger-button" onClick={() => { setOwnerError(''); setPendingRemoveOwner(true); }} disabled={ownerSaving}>Remove owner</button>}
                   </div>
                 ) : (
                   canManage ? (
@@ -1654,7 +1654,7 @@ function App() {
                     <div className="status-panel">
                       <div>
                         <strong>Platform-level restaurant controls</strong>
-                        <span>System Administrator changes are saved through protected database functions.</span>
+                        <span>{canManage ? 'System Administrator changes are saved through protected database functions.' : 'View Only access can review these settings but cannot change them.'}</span>
                       </div>
                       {canManage && <button onClick={() => setPendingSaveSettings(true)} disabled={settingsSaving}>
                         {settingsSaving ? 'Saving...' : 'Save settings'}
