@@ -1080,10 +1080,18 @@ function App() {
             <div><div className="eyebrow">WEB2TABLE Platform</div><h1>System Admin</h1></div>
           </div>
           <div className="admin-header-actions">
-            <button className="admin-icon-button active" onClick={() => openDashboard()} title="Dashboard" aria-label="Dashboard"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></button>
-            <button className="admin-icon-button" onClick={() => openRestaurants()} title="Restaurants" aria-label="Restaurants"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V20h11V9.5M9.5 20v-6h5v6"/></svg></button>
-            <button className="admin-icon-button" onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg></button>
-            <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg></button>
+            <button className={adminPage === 'dashboard' ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openDashboard()} title="Dashboard" aria-label="Dashboard">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+            </button>
+            <button className={adminPage === 'restaurants' ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openRestaurants()} title="Restaurants" aria-label="Restaurants">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V20h11V9.5M9.5 20v-6h5v6"/></svg>
+            </button>
+            <button className={adminPage === 'audit' ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
+            </button>
+            <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
+            </button>
           </div>
         </header>
         {accountMenuOpen && (
@@ -1160,8 +1168,14 @@ function App() {
             <div><div className="eyebrow">Account</div><h1>System Administrators</h1></div>
           </div>
           <div className="admin-header-actions">
-            <button className="admin-icon-button" onClick={() => setAdminPage('restaurants')} title="Restaurants" aria-label="Restaurants">
+            <button className={adminPage === 'dashboard' ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openDashboard()} title="Dashboard" aria-label="Dashboard">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+            </button>
+            <button className={adminPage === 'restaurants' ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openRestaurants()} title="Restaurants" aria-label="Restaurants">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V20h11V9.5M9.5 20v-6h5v6"/></svg>
+            </button>
+            <button className={adminPage === 'audit' ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
             </button>
             <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
               <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
@@ -1291,7 +1305,18 @@ function App() {
             </div>
           </div>
           <div className="admin-header-actions">
-            <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg></button>
+            <button className={adminPage === 'dashboard' ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openDashboard()} title="Dashboard" aria-label="Dashboard">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+            </button>
+            <button className={adminPage === 'restaurants' ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openRestaurants()} title="Restaurants" aria-label="Restaurants">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V20h11V9.5M9.5 20v-6h5v6"/></svg>
+            </button>
+            <button className={adminPage === 'audit' ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
+            </button>
+            <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
+            </button>
           </div>
         </header>
 
@@ -1715,8 +1740,18 @@ function App() {
             </div>
           </div>
           <div className="admin-header-actions">
-            <button className="admin-icon-button" onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg></button>
-            <button className="secondary-button" onClick={signOut}>Sign out</button>
+            <button className={adminPage === 'dashboard' ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openDashboard()} title="Dashboard" aria-label="Dashboard">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+            </button>
+            <button className={adminPage === 'restaurants' ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openRestaurants()} title="Restaurants" aria-label="Restaurants">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V20h11V9.5M9.5 20v-6h5v6"/></svg>
+            </button>
+            <button className={adminPage === 'audit' ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
+            </button>
+            <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
+            </button>
           </div>
         </header>
 
@@ -2262,9 +2297,19 @@ function App() {
           </div>
         </div>
         <div className="admin-header-actions">
-          <button className="admin-icon-button" onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg></button>
-          <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg></button>
-        </div>
+            <button className={adminPage === 'dashboard' ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openDashboard()} title="Dashboard" aria-label="Dashboard">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+            </button>
+            <button className={adminPage === 'restaurants' ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openRestaurants()} title="Restaurants" aria-label="Restaurants">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V20h11V9.5M9.5 20v-6h5v6"/></svg>
+            </button>
+            <button className={adminPage === 'audit' ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
+            </button>
+            <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
+            </button>
+          </div>
       </header>
 
         {accountMenuOpen && (
