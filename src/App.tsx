@@ -119,6 +119,17 @@ function App() {
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState('');
   const [dashboardSummary, setDashboardSummary] = useState<{ total_restaurants: number; active_restaurants: number; inactive_restaurants: number; active_system_administrators: number; pending_system_administrators: number; } | null>(null);
+  const [dashboardRestaurantMonitoring, setDashboardRestaurantMonitoring] = useState<Array<{
+    restaurant_id: string;
+    restaurant_name: string;
+    is_active: boolean;
+    customer_accounts: number;
+    customers_ordered_today: number;
+    orders_today: number;
+    processing_orders: number;
+    last_activity: string | null;
+    logged_in_now: number | null;
+  }>>([]);
   const [dashboardRecentLogs, setDashboardRecentLogs] = useState<typeof auditLogs>([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState('');
@@ -737,8 +748,9 @@ function App() {
     setDashboardLoading(true);
     setDashboardError('');
 
-    const [summaryResult, logsResult] = await Promise.all([
+    const [summaryResult, monitoringResult, logsResult] = await Promise.all([
       supabase.rpc('system_admin_get_dashboard_summary'),
+      supabase.rpc('system_admin_get_restaurant_monitoring'),
       supabase.rpc('system_admin_get_audit_logs', {
         p_restaurant_id: null,
         p_event_type: null,
@@ -755,6 +767,13 @@ function App() {
     } else {
       const summary = Array.isArray(summaryResult.data) ? summaryResult.data[0] : summaryResult.data;
       setDashboardSummary(summary ?? null);
+    }
+
+    if (monitoringResult.error) {
+      setDashboardError((current) => current || monitoringResult.error.message);
+      setDashboardRestaurantMonitoring([]);
+    } else {
+      setDashboardRestaurantMonitoring((Array.isArray(monitoringResult.data) ? monitoringResult.data : []) as typeof dashboardRestaurantMonitoring);
     }
 
     if (logsResult.error) {
@@ -1135,6 +1154,56 @@ function App() {
                   <span>Pending invitations</span>
                   <strong>{dashboardSummary?.pending_system_administrators ?? 0}</strong>
                 </button>
+              </div>
+              <div className="dashboard-section-label">Restaurant Monitoring</div>
+              <div className="dashboard-monitoring">
+                <div className="dashboard-monitoring-heading">
+                  <div>
+                    <div className="eyebrow">Live Operations</div>
+                    <h3>Restaurant Activity</h3>
+                    <p>Monitor customer and order activity across all restaurants.</p>
+                  </div>
+                </div>
+                {dashboardRestaurantMonitoring.length === 0 ? (
+                  <div className="empty-state">No restaurant monitoring data available.</div>
+                ) : (
+                  <div className="dashboard-monitoring-table-wrap">
+                    <table className="dashboard-monitoring-table">
+                      <thead>
+                        <tr>
+                          <th>Restaurant</th>
+                          <th>Status</th>
+                          <th>Customer Accounts</th>
+                          <th>Logged In Now</th>
+                          <th>Customers Ordered Today</th>
+                          <th>Orders Today</th>
+                          <th>Processing</th>
+                          <th>Last Activity</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dashboardRestaurantMonitoring.map((monitoring) => (
+                          <tr key={monitoring.restaurant_id}>
+                            <td><strong>{monitoring.restaurant_name}</strong></td>
+                            <td>
+                              <span className={monitoring.is_active ? 'status active' : 'status inactive'}>
+                                {monitoring.is_active ? 'Active' : 'Inactive'}
+                              </span>
+                            </td>
+                            <td>{monitoring.customer_accounts}</td>
+                            <td>{monitoring.logged_in_now ?? '—'}</td>
+                            <td>{monitoring.customers_ordered_today}</td>
+                            <td>{monitoring.orders_today}</td>
+                            <td>{monitoring.processing_orders}</td>
+                            <td className="dashboard-monitoring-last-activity">
+                              {monitoring.last_activity ? new Date(monitoring.last_activity).toLocaleString() : 'No activity'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
               <div className="dashboard-activity">
                 <div className="dashboard-activity-heading">
