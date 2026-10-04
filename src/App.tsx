@@ -2371,10 +2371,10 @@ function App() {
                 </div>
 
                 <div className="staff-delete-content">
-                  <p>This will remove the staff record from this restaurant.</p>
+                  <p>This permanently deletes the staff record and the associated Supabase Auth account.</p>
                   <div className="staff-delete-warning">
-                    <strong>This action does not delete the Supabase Auth account.</strong>
-                    <span>Historical operational records are not deleted.</span>
+                    <strong>Only the System Administrator Owner can perform this action.</strong>
+                    <span>Historical operational records are preserved where the database relationships allow it.</span>
                   </div>
                   {staffActionError && <div className="error-banner">{staffActionError}</div>}
                 </div>
