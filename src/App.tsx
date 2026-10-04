@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { supabase } from './lib/supabase';
 
 type Restaurant = {
@@ -144,6 +144,12 @@ function App() {
   const [auditPageNumber, setAuditPageNumber] = useState(0);
   const [auditHasMore, setAuditHasMore] = useState(false);
   const [selectedAuditLog, setSelectedAuditLog] = useState<typeof auditLogs[number] | null>(null);
+  const restaurantsRef = useRef(restaurants);
+  const auditLogsRef = useRef(auditLogs);
+  const adminAccessLevelRef = useRef(adminAccessLevel);
+  restaurantsRef.current = restaurants;
+  auditLogsRef.current = auditLogs;
+  adminAccessLevelRef.current = adminAccessLevel;
 
   async function recordAuthAuditEvent(
     eventType: 'LOGIN_SUCCESS' | 'LOGOUT',
@@ -251,7 +257,7 @@ function App() {
     setAccountMenuOpen(false);
 
     if (navigation.page === 'restaurant' && navigation.restaurantId) {
-      const restaurant = restaurants.find((item) => item.id === navigation.restaurantId);
+      const restaurant = restaurantsRef.current.find((item) => item.id === navigation.restaurantId);
       if (restaurant) {
         setAdminPage('restaurants');
         openRestaurant(restaurant, false);
@@ -822,6 +828,12 @@ function App() {
       setAuditLogs(logs);
       setAuditHasMore(logs.length === pageSize);
       setAuditPageNumber(pageNumber);
+
+      const auditIdFromUrl = new URLSearchParams(window.location.search).get('auditId');
+      if (auditIdFromUrl) {
+        const matchingLog = logs.find((log) => log.id === auditIdFromUrl);
+        if (matchingLog) setSelectedAuditLog(matchingLog);
+      }
     }
 
     setAuditLoading(false);
@@ -845,10 +857,19 @@ function App() {
 
   function openAuditLogs(pushHistory = true) {
     if (pushHistory) pushNavigation('audit');
+    setSelectedAuditLog(null);
     setSelectedRestaurant(null);
     setAdminPage('audit');
     setAuditPageNumber(0);
     void loadAuditLogs(0);
+  }
+
+  function openAuditLog(log: typeof auditLogs[number]) {
+    pushNavigation('audit', { auditId: log.id });
+    setSelectedRestaurant(null);
+    setAdminPage('audit');
+    setSelectedAuditLog(log);
+    setAuditPageNumber(0);
   }
 
   async function loadRestaurants() {
@@ -981,7 +1002,7 @@ function App() {
       const current = getNavigationFromUrl();
 
       if (current.page === 'restaurant' && current.restaurantId) {
-        const restaurant = restaurants.find((item) => item.id === current.restaurantId);
+        const restaurant = restaurantsRef.current.find((item) => item.id === current.restaurantId);
         if (restaurant) {
           openRestaurant(restaurant, false);
           return;
@@ -1000,11 +1021,11 @@ function App() {
         setAuditPageNumber(0);
         void loadAuditLogs(0);
         if (current.auditId) {
-          const log = auditLogs.find((item) => item.id === current.auditId);
+          const log = auditLogsRef.current.find((item) => item.id === current.auditId);
           if (log) setSelectedAuditLog(log);
         }
       }
-      if (current.page === 'administrators' && adminAccessLevel === 'owner') void loadAdministrators();
+      if (current.page === 'administrators' && adminAccessLevelRef.current === 'owner') void loadAdministrators();
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -1115,7 +1136,7 @@ function App() {
                 {dashboardRecentLogs.length === 0 ? <div className="empty-state">No recent platform activity.</div> : (
                   <div className="dashboard-activity-list">
                     {dashboardRecentLogs.map((log) => (
-                      <button className="dashboard-activity-row" type="button" key={log.id} onClick={() => { openAuditLogs(); setSelectedAuditLog(log); }}>
+                      <button className="dashboard-activity-row" type="button" key={log.id} onClick={() => openAuditLog(log)}>
                         <div><strong>{log.action}</strong><span>{log.admin_name || log.admin_email || 'Unknown administrator'}{log.restaurant_name ? ` • ${log.restaurant_name}` : ''}</span></div>
                         <time>{new Date(log.created_at).toLocaleString()}</time>
                       </button>
@@ -1387,7 +1408,7 @@ function App() {
                           )}
                         </td>
                          <td>
-                           <button className="secondary-button audit-view-button" type="button" onClick={() => { pushNavigation('audit', { auditId: log.id }); setSelectedAuditLog(log); }}>View</button>
+                           <button className="secondary-button audit-view-button" type="button" onClick={() => openAuditLog(log)}>View</button>
                          </td>
                       </tr>
                     );
