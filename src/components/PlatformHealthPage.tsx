@@ -43,7 +43,7 @@ function StatusDot({ status }: { status: ServiceStatus }) {
   return <span className={`platform-health-dot platform-health-dot-${status}`} aria-hidden="true" />;
 }
 
-export default function PlatformHealthPage() {
+export default function PlatformHealthPage({ onBack }: { onBack: () => void }) {
   const [report, setReport] = useState<HealthReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -97,7 +97,7 @@ export default function PlatformHealthPage() {
             <h1>Platform Health</h1>
           </div>
         </div>
-        <button className="secondary-button" type="button" onClick={() => void runHealthCheck(false)} disabled={refreshing}>
+        <div className="platform-health-header-actions"><button className="secondary-button" type="button" onClick={onBack}>Dashboard</button><button className="secondary-button" type="button" onClick={() => void runHealthCheck(false)} disabled={refreshing}>
           {refreshing ? 'Checking...' : 'Run health check'}
         </button>
       </header>
