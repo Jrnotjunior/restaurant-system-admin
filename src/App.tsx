@@ -548,28 +548,35 @@ function App() {
     await loadDashboard();
   }
 
-  async function signOut() {
+  function signOut() {
     setAccountMenuOpen(false);
 
-    // Use Supabase's normal global sign-out flow. This is the same
-    // authentication path used by the original System Admin logout.
-    const { error } = await supabase.auth.signOut({ scope: 'global' });
+    // Immediately leave the authenticated UI. Supabase logout is started
+    // in the background so a slow/hanging auth request cannot trap the user
+    // on the System Admin screen.
+    void supabase.auth.signOut({ scope: 'local' }).catch((error) => {
+      console.error('System Administrator local sign out failed:', error);
+    });
 
-    if (error) {
-      console.error('System Administrator sign out failed:', error);
-      window.alert(error.message || 'Unable to sign out. Please try again.');
-      return;
-    }
-
-    // Clear the UI immediately after Supabase confirms sign-out.
     setSignedIn(false);
     setAuthorized(false);
     setAdminAccessLevel(null);
     setRestaurants([]);
     setSelectedRestaurant(null);
+    setSelectedAuditLog(null);
+    setSelectedRestaurant(null);
     setAdminPage('dashboard');
 
-    // Return to the normal application entry point.
+    // Remove only this Supabase project's persisted auth session.
+    try {
+      const projectRef = new URL(import.meta.env.VITE_SUPABASE_URL).hostname.split('.')[0];
+      const key = `sb-${projectRef}-auth-token`;
+      window.localStorage.removeItem(key);
+      window.sessionStorage.removeItem(key);
+    } catch (error) {
+      console.error('Unable to clear local System Admin session:', error);
+    }
+
     window.location.replace(window.location.pathname);
   }
 
