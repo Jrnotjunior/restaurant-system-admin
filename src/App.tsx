@@ -1137,1259 +1137,6 @@ function App() {
     );
   }, [restaurants, search]);
 
-
-  if (isAdminPage(adminPage, 'dashboard')) {
-    return (
-      <main className="admin-shell">
-        <header className="admin-header">
-          <div className="brand-block">
-            <img className="company-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
-            <div><div className="eyebrow">WEB2TABLE Platform</div><h1>System Admin</h1></div>
-          </div>
-          <div className="admin-header-actions">
-            <button className={isAdminPage(adminPage, 'dashboard') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openDashboard()} title="Dashboard" aria-label="Dashboard">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
-            </button>
-            <button className={isAdminPage(adminPage, 'restaurants') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openRestaurants()} title="Restaurants" aria-label="Restaurants">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V20h11V9.5M9.5 20v-6h5v6"/></svg>
-            </button>
-            <button className={isAdminPage(adminPage, 'audit') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
-            </button>
-            <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
-            </button>
-          </div>
-        </header>
-        {accountMenuOpen && (
-          <div className="account-menu">
-            <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
-            {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
-            <button type="button" className="account-menu-item" onClick={(event) => { event.preventDefault(); event.stopPropagation(); void signOut(); }}>Sign out</button>
-          </div>
-        )}
-        <section className="dashboard-card system-dashboard-card">
-          <div className="section-heading">
-            <div><div className="eyebrow">Platform Overview</div><h2>Dashboard</h2><p>Monitor restaurants, administrator access, and recent platform activity.</p></div>
-          </div>
-          {dashboardError && <div className="error-banner">{dashboardError}</div>}
-          {dashboardLoading && !dashboardSummary ? (
-            <div className="empty-state">Loading platform overview...</div>
-          ) : (
-            <>              <div className="dashboard-section-label">Restaurant Operations</div>
-              <div className="system-stats-grid">
-                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openRestaurants()}>
-                  <span>Total restaurants</span>
-                  <strong>{dashboardSummary?.total_restaurants ?? 0}</strong>
-                </button>
-                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openRestaurants()}>
-                  <span>Active restaurants</span>
-                  <strong>{dashboardSummary?.active_restaurants ?? 0}</strong>
-                </button>
-                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openRestaurants()}>
-                  <span>Inactive restaurants</span>
-                  <strong>{dashboardSummary?.inactive_restaurants ?? 0}</strong>
-                </button>
-              </div>
-              <div className="dashboard-section-label">System Administration</div>
-              <div className="system-stats-grid">
-                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openAdministrators()} disabled={adminAccessLevel !== 'owner'} title={adminAccessLevel === 'owner' ? 'Open System Administrators' : 'Administrator management is restricted to the Owner'}>
-                  <span>Active administrators</span>
-                  <strong>{dashboardSummary?.active_system_administrators ?? 0}</strong>
-                </button>
-                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openAdministrators()} disabled={adminAccessLevel !== 'owner'} title={adminAccessLevel === 'owner' ? 'Open System Administrators' : 'Administrator management is restricted to the Owner'}>
-                  <span>Pending invitations</span>
-                  <strong>{dashboardSummary?.pending_system_administrators ?? 0}</strong>
-                </button>
-              </div>
-              <div className="dashboard-section-label">Restaurant Monitoring</div>
-              <div className="dashboard-monitoring">
-                <div className="dashboard-monitoring-heading">
-                  <div>
-                    <div className="eyebrow">Live Operations</div>
-                    <h3>Restaurant Activity</h3>
-                    <p>Monitor customer and order activity across all restaurants.</p>
-                  </div>
-                </div>
-                {dashboardRestaurantMonitoring.length === 0 ? (
-                  <div className="empty-state">No restaurant monitoring data available.</div>
-                ) : (
-                  <div className="dashboard-monitoring-table-wrap">
-                    <table className="dashboard-monitoring-table">
-                      <thead>
-                        <tr>
-                          <th>Restaurant</th>
-                          <th>Status</th>
-                          <th>Customer Accounts</th>
-                          <th>Logged In Now</th>
-                          <th>Customers Ordered Today</th>
-                          <th>Orders Today</th>
-                          <th>Processing</th>
-                          <th>Last Activity</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dashboardRestaurantMonitoring.map((monitoring) => (
-                          <tr key={monitoring.restaurant_id}>
-                            <td><strong>{monitoring.restaurant_name}</strong></td>
-                            <td>
-                              <span className={monitoring.is_active ? 'status active' : 'status inactive'}>
-                                {monitoring.is_active ? 'Active' : 'Inactive'}
-                              </span>
-                            </td>
-                            <td>{monitoring.customer_accounts}</td>
-                            <td>{monitoring.logged_in_now ?? '—'}</td>
-                            <td>{monitoring.customers_ordered_today}</td>
-                            <td>{monitoring.orders_today}</td>
-                            <td>{monitoring.processing_orders}</td>
-                            <td className="dashboard-monitoring-last-activity">
-                              {monitoring.last_activity ? new Date(monitoring.last_activity).toLocaleString() : 'No activity'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-              <div className="dashboard-activity">
-                <div className="dashboard-activity-heading">
-                  <div><div className="eyebrow">Accountability</div><h3>Recent Platform Activity</h3></div>
-                  <button className="secondary-button" type="button" onClick={() => openAuditLogs()}>View Audit Logs</button>
-                </div>
-                {dashboardRecentLogs.length === 0 ? <div className="empty-state">No recent platform activity.</div> : (
-                  <div className="dashboard-activity-list">
-                    {dashboardRecentLogs.map((log) => (
-                      <button className="dashboard-activity-row" type="button" key={log.id} onClick={() => openAuditLog(log)}>
-                        <div><strong>{log.action}</strong><span>{log.admin_name || log.admin_email || 'Unknown administrator'}{log.restaurant_name ? ` • ${log.restaurant_name}` : ''}</span></div>
-                        <time>{new Date(log.created_at).toLocaleString()}</time>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </section>
-      </main>
-    );
-  }
-
-  if (isAdminPage(adminPage, 'administrators')) {
-    return (
-      <main className="admin-shell">
-        <header className="admin-header">
-          <div className="brand-block">
-            <img className="company-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
-            <div><div className="eyebrow">Account</div><h1>System Administrators</h1></div>
-          </div>
-          <div className="admin-header-actions">
-            <button className={isAdminPage(adminPage, 'dashboard') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openDashboard()} title="Dashboard" aria-label="Dashboard">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
-            </button>
-            <button className={isAdminPage(adminPage, 'restaurants') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openRestaurants()} title="Restaurants" aria-label="Restaurants">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V20h11V9.5M9.5 20v-6h5v6"/></svg>
-            </button>
-            <button className={isAdminPage(adminPage, 'audit') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
-            </button>
-            <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
-            </button>
-          </div>
-        </header>
-        {accountMenuOpen && (
-          <div className="account-menu">
-            <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
-            <button className="account-menu-item" onClick={() => setAccountMenuOpen(false)}>System Administrators</button>
-            <button className="account-menu-item" onClick={signOut}>Sign out</button>
-          </div>
-        )}
-        <section className="dashboard-card administrators-card">
-          <div className="section-heading">
-            <div><div className="eyebrow">Access Control</div><h2>System Administrators</h2><p>Manage who can access the WEB2TABLE System Admin platform.</p></div>
-            <button onClick={() => { setInviteAdminError(''); setInviteAdminSuccess(''); setShowInviteAdmin(true); }}>+ Invite Administrator</button>
-          </div>
-          {administratorsError && <div className="error-banner">{administratorsError}</div>}
-          {inviteAdminSuccess && <div className="success-banner">{inviteAdminSuccess}</div>}
-          {administratorsLoading ? <div className="empty-state">Loading administrators...</div> : administrators.length === 0 ? (
-            <div className="empty-state"><strong>No administrators found</strong><span>Invite an administrator to get started.</span></div>
-          ) : (
-            <div className="administrators-table-wrap">
-              <table className="administrators-table">
-                <thead><tr><th>Administrator</th><th>Access</th><th>Status</th><th>Granted by</th><th>Actions</th></tr></thead>
-                <tbody>
-                  {administrators.map((admin) => (
-                    <tr key={admin.id}>
-                      <td><strong>{admin.name || admin.email || 'Unnamed administrator'}</strong>{admin.name && admin.email && <span className="audit-subtext">{admin.email}</span>}</td>
-                      <td><span className="access-badge">{admin.access_level === 'owner' ? 'Owner' : admin.access_level === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</span></td>
-                      <td><span className={admin.status === 'active' ? 'status active' : 'status inactive'}>{admin.status === 'pending' ? 'Pending invite' : admin.status === 'revoked' ? 'Revoked' : 'Active'}</span></td>
-                      <td>{admin.granted_by_email || '—'}</td>
-                      <td>
-                        {admin.access_level === 'owner' ? <span className="audit-subtext">Owner account</span> : admin.status === 'revoked' ? (
-                          <div className="staff-actions">
-                            <button className="secondary-button" onClick={() => setPendingAdminAction({ type: 'restore', admin })}>Restore</button>
-                            <button className="danger-button" onClick={() => setPendingAdminAction({ type: 'delete', admin })}>Delete</button>
-                          </div>
-                        ) : (
-                          <div className="staff-actions">
-                            <button className="secondary-button" onClick={() => setPendingAdminAction({ type: 'change', admin, nextAccessLevel: admin.access_level === 'administrator' ? 'view_only' : 'administrator' })}>{admin.access_level === 'administrator' ? 'Make View Only' : 'Make Full Access'}</button>
-                            <button className="danger-button" onClick={() => setPendingAdminAction({ type: 'revoke', admin })}>Revoke</button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-        {showInviteAdmin && (
-          <div className="modal-backdrop" role="presentation">
-            <section className="modal-card administrator-invite-modal" role="dialog" aria-modal="true" aria-labelledby="invite-admin-title">
-              <div className="modal-heading"><div><div className="eyebrow">System Administrator</div><h2 id="invite-admin-title">Invite Administrator</h2></div><button className="icon-button" type="button" onClick={() => setShowInviteAdmin(false)} disabled={inviteAdminSaving} aria-label="Close">×</button></div>
-              <form className="restaurant-form" onSubmit={inviteAdministrator}>
-                <label>Email address<input type="email" value={inviteAdminEmail} onChange={(event) => setInviteAdminEmail(event.target.value)}  autoComplete="email" required /></label>
-                <label>Access Level<select value={inviteAdminAccessLevel} onChange={(event) => setInviteAdminAccessLevel(event.target.value as 'administrator' | 'view_only')}><option value="administrator">Administrator — Full Access</option><option value="view_only">View Only</option></select></label>
-                <div className="administrator-invite-warning"><strong>The invitation will be emailed to this address.</strong><span>The account will remain pending until the invitee creates a password.</span></div>
-                {inviteAdminError && <div className="error-banner">{inviteAdminError}</div>}
-                <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setShowInviteAdmin(false)} disabled={inviteAdminSaving}>Cancel</button><button type="submit" disabled={inviteAdminSaving}>{inviteAdminSaving ? 'Sending...' : 'Send Invitation'}</button></div>
-              </form>
-            </section>
-          </div>
-        )}
-        {inviteAdminConfirmationEmail && (
-          <div className="modal-backdrop" role="presentation">
-            <section className="modal-card administrator-invite-success-modal" role="dialog" aria-modal="true" aria-labelledby="invite-admin-success-title">
-              <div className="modal-heading">
-                <div>
-                  <div className="eyebrow">Invitation Sent</div>
-                  <h2 id="invite-admin-success-title">Invitation email sent</h2>
-                </div>
-                <button
-                  className="icon-button"
-                  type="button"
-                  onClick={() => setInviteAdminConfirmationEmail('')}
-                  aria-label="Close"
-                >
-                  ×
-                </button>
-              </div>
-              <div className="administrator-action-content">
-                <div className="success-banner">The invitation email has been sent successfully.</div>
-                <p>The invitation was sent to <strong>{inviteAdminConfirmationEmail}</strong>.</p>
-                <div className="administrator-action-warning">
-                  <strong>The account is currently pending.</strong>
-                  <span>The invitee must open the invitation email and create a password before the account becomes active.</span>
-                </div>
-              </div>
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  onClick={() => setInviteAdminConfirmationEmail('')}
-                >
-                  Done
-                </button>
-              </div>
-            </section>
-          </div>
-        )}
-        {pendingAdminAction && (
-          <div className="modal-backdrop" role="presentation">
-            <section className="modal-card administrator-action-modal" role="dialog" aria-modal="true" aria-labelledby="admin-action-title">
-              <div className="modal-heading"><div><div className="eyebrow">Access Control</div><h2 id="admin-action-title">{pendingAdminAction.type === 'revoke' ? 'Revoke access?' : pendingAdminAction.type === 'restore' ? 'Restore access?' : pendingAdminAction.type === 'delete' ? 'Delete administrator?' : 'Change access level?'}</h2></div><button className="icon-button" type="button" onClick={() => setPendingAdminAction(null)} disabled={adminActionSaving} aria-label="Close">×</button></div>
-              <div className="administrator-action-content"><p><strong>{pendingAdminAction.admin.email || pendingAdminAction.admin.name || 'This administrator'}</strong></p><div className="administrator-action-warning"><strong>{pendingAdminAction.type === 'revoke' ? 'This administrator will no longer be able to access System Admin.' : pendingAdminAction.type === 'restore' ? 'This administrator will regain their previous access level.' : pendingAdminAction.type === 'delete' ? 'This permanently deletes the revoked administrator account and removes its System Admin access. This cannot be undone.' : 'Access will change to ' + (pendingAdminAction.nextAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only') + '.'}</strong><span>{pendingAdminAction.type === 'delete' ? 'Only a revoked account can be permanently deleted. Audit history is retained.' : 'The Owner account cannot be changed or revoked.'}</span></div>{administratorsError && <div className="error-banner">{administratorsError}</div>}</div>
-              <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setPendingAdminAction(null)} disabled={adminActionSaving}>Cancel</button><button type="button" className={pendingAdminAction.type === 'revoke' || pendingAdminAction.type === 'delete' ? 'danger-button' : ''} onClick={() => void confirmAdministratorAction()} disabled={adminActionSaving}>{adminActionSaving ? 'Saving...' : pendingAdminAction.type === 'delete' ? 'Delete permanently' : 'Confirm'}</button></div>
-            </section>
-          </div>
-        )}
-      </main>
-    );
-  }
-
-  if (isAdminPage(adminPage, 'audit')) {
-    return (
-
-      <main className="admin-shell">
-        <header className="admin-header">
-          <div className="brand-block">
-            <img className="company-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
-            <div>
-              <div className="eyebrow">WEB2TABLE Platform</div>
-              <h1>System Admin</h1>
-            </div>
-          </div>
-          <div className="admin-header-actions">
-            <button className={isAdminPage(adminPage, 'dashboard') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openDashboard()} title="Dashboard" aria-label="Dashboard">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
-            </button>
-            <button className={isAdminPage(adminPage, 'restaurants') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openRestaurants()} title="Restaurants" aria-label="Restaurants">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V20h11V9.5M9.5 20v-6h5v6"/></svg>
-            </button>
-            <button className={isAdminPage(adminPage, 'audit') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
-            </button>
-            <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
-            </button>
-          </div>
-        </header>
-
-        {accountMenuOpen && (
-          <div className="account-menu">
-            <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
-            {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
-            <button className="account-menu-item" onClick={signOut}>Sign out</button>
-          </div>
-        )}
-
-        <section className="dashboard-card audit-page-card">
-          <div className="section-heading">
-            <div>
-              <div className="eyebrow">Accountability</div>
-              <h2>Audit Logs</h2>
-              <p>Review System Administrator sign-ins and administrative changes across the platform.</p>
-            </div>
-          </div>
-
-          <div className="audit-summary-row">
-            <div className="stat-card"><span>Total records</span><strong>{auditLogs.length}</strong></div>
-            <div className="stat-card"><span>Administrative actions</span><strong>{auditLogs.filter((log) => log.event_type === 'ADMIN_ACTION').length}</strong></div>
-            <div className="stat-card"><span>Authentication events</span><strong>{auditLogs.filter((log) => log.event_type !== 'ADMIN_ACTION').length}</strong></div>
-          </div>
-
-          <div className="audit-toolbar">
-            <input
-              className="search-input"
-              type="search"
-              placeholder="Search administrator, restaurant, action..."
-              value={auditSearch}
-              onChange={(event) => setAuditSearch(event.target.value)}
-            />
-            <select value={auditEventFilter} onChange={(event) => setAuditEventFilter(event.target.value)}>
-              <option value="ALL">All events</option>
-              <option value="ADMIN_ACTION">Administrative actions</option>
-              <option value="LOGIN_SUCCESS">Login success</option>
-              <option value="LOGOUT">Logout</option>
-              <option value="ACCESS_DENIED">Access denied</option>
-            </select>
-            <select value={auditDatePreset} onChange={(event) => setAuditDatePreset(event.target.value as typeof auditDatePreset)}>
-              <option value="ALL">All dates</option>
-              <option value="TODAY">Today</option>
-              <option value="7_DAYS">Last 7 days</option>
-              <option value="30_DAYS">Last 30 days</option>
-              <option value="CUSTOM">Custom range</option>
-            </select>
-            {auditDatePreset === 'CUSTOM' && (
-              <>
-                <input type="date" value={auditStartDate} onChange={(event) => setAuditStartDate(event.target.value)} aria-label="Audit start date" />
-                <input type="date" value={auditEndDate} onChange={(event) => setAuditEndDate(event.target.value)} aria-label="Audit end date" />
-              </>
-            )}
-             <button className="secondary-button audit-export-button" type="button" onClick={exportAuditLogs} disabled={filteredAuditLogs.length === 0}>Export CSV</button>
-          </div>
-
-          {auditError && <div className="error-banner">{auditError}</div>}
-
-          {auditLoading ? (
-            <div className="empty-state">Loading audit logs...</div>
-          ) : filteredAuditLogs.length === 0 ? (
-            <div className="empty-state">
-              <strong>No audit records found</strong>
-              <span>Try a different search or filter.</span>
-            </div>
-          ) : (
-            <div className="audit-table-wrap">
-              <table className="audit-table">
-                <thead>
-                  <tr>
-                    <th>Date &amp; Time</th>
-                    <th>Administrator</th>
-                    <th>Restaurant</th>
-                    <th>Event</th>
-                    <th>Action</th>
-                    <th>Changes / Details</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredAuditLogs.map((log) => {
-                    const changes = (log.details?.changes ?? null) as Record<string, unknown> | null;
-                    const createdValues = (log.details?.created_values ?? null) as Record<string, unknown> | null;
-
-                    return (
-                      <tr key={log.id}>
-                        <td className="audit-date">{new Date(log.created_at).toLocaleString()}</td>
-                        <td>
-                          <strong>{log.admin_name || log.admin_email || 'Unknown administrator'}</strong>
-                          {log.admin_name && log.admin_email && <span className="audit-subtext">{log.admin_email}</span>}
-                        </td>
-                        <td>{log.restaurant_name || '—'}</td>
-                        <td><span className={log.event_type === 'ADMIN_ACTION' ? 'audit-event admin' : 'audit-event'}>{log.event_type}</span></td>
-                        <td>{log.action}</td>
-                        <td>
-                          {changes && Object.keys(changes).length > 0 ? (
-                            <div className="audit-change-list">
-                              {Object.entries(changes).map(([field, value]) => {
-                                const pair = Array.isArray(value) ? value : [];
-                                return (
-                                  <div className="audit-change" key={field}>
-                                    <strong>{field.replaceAll('_', ' ')}</strong>
-                                    <span>{String(pair[0] ?? '—')} → {String(pair[1] ?? '—')}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : createdValues ? (
-                            <div className="audit-change-list">
-                              <div className="audit-change"><strong>Created with</strong><span>{String(createdValues.name ?? 'restaurant')}</span></div>
-                            </div>
-                          ) : (
-                            <span className="audit-subtext">{String(log.details?.source ?? '—')}</span>
-                          )}
-                        </td>
-                         <td>
-                           <button className="secondary-button audit-view-button" type="button" onClick={() => openAuditLog(log)}>View</button>
-                         </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <div className="audit-pagination">
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => void loadAuditLogs(Math.max(0, auditPageNumber - 1))}
-              disabled={auditLoading || auditPageNumber === 0}
-            >
-              Previous
-            </button>
-            <span>Page {auditPageNumber + 1}</span>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => void loadAuditLogs(auditPageNumber + 1)}
-              disabled={auditLoading || !auditHasMore}
-            >
-              Next
-            </button>
-          </div>
-        </section>
-      </main>
-    );
-  }
-
-
-  {selectedAuditLog && (
-    <div className="modal-backdrop audit-detail-backdrop" role="presentation">
-      <section className="modal-card audit-detail-modal" role="dialog" aria-modal="true" aria-labelledby="audit-detail-title">
-        <div className="modal-heading">
-          <div><div className="eyebrow">Audit Event</div><h2 id="audit-detail-title">Event details</h2></div>
-          <button className="icon-button" type="button" onClick={() => { if (new URLSearchParams(window.location.search).get('auditId')) window.history.back(); else setSelectedAuditLog(null); }} aria-label="Close">×</button>
-        </div>
-        <div className="audit-detail-grid">
-          <div><span>Date &amp; Time</span><strong>{new Date(selectedAuditLog.created_at).toLocaleString()}</strong></div>
-          <div><span>Administrator</span><strong>{selectedAuditLog.admin_name || selectedAuditLog.admin_email || 'Unknown administrator'}</strong></div>
-          <div><span>Restaurant</span><strong>{selectedAuditLog.restaurant_name || '—'}</strong></div>
-          <div><span>Event</span><strong>{selectedAuditLog.event_type}</strong></div>
-          <div><span>Action</span><strong>{selectedAuditLog.action}</strong></div>
-          <div><span>Entity</span><strong>{selectedAuditLog.entity_type || '—'}</strong></div>
-        </div>
-        <div className="audit-json-panel"><div className="eyebrow">Recorded details</div><pre>{JSON.stringify(selectedAuditLog.details ?? {}, null, 2)}</pre></div>
-        <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => { if (new URLSearchParams(window.location.search).get('auditId')) window.history.back(); else setSelectedAuditLog(null); }}>Close</button></div>
-      </section>
-    </div>
-  )}
-
-  function openRestaurant(restaurant: Restaurant, pushHistory = true) {
-    if (pushHistory) pushNavigation('restaurant', { restaurantId: restaurant.id });
-    setSelectedRestaurant(restaurant);
-    setAdminPage('restaurants');
-    setManageTab('overview');
-    setOwnerEmail('');
-    setOwnerName('');
-    setOwnerUserId('');
-    setOwnerError('');
-    setDomain('');
-    setDomainError('');
-    setSettingsError('');
-    setRestaurantError('');
-  }
-
-  function closeRestaurant(pushHistory = true) {
-    if (pushHistory) pushNavigation('restaurants');
-    setSelectedRestaurant(null);
-  }
-
-  function startCreate() {
-    setEditingRestaurant(null);
-    setForm(emptyForm);
-    setRestaurantError('');
-    setShowForm(true);
-  }
-
-  function startEdit(restaurant: Restaurant) {
-    setEditingRestaurant(restaurant);
-    setForm({
-      name: restaurant.name,
-      slug: restaurant.slug,
-      tagline: restaurant.tagline,
-      logo_url: restaurant.logo_url ?? '',
-      location_text: restaurant.location_text ?? '',
-      contact_number: restaurant.contact_number ?? '',
-      email: restaurant.email ?? '',
-      is_active: restaurant.is_active,
-    });
-    setRestaurantError('');
-    setShowForm(true);
-  }
-
-  function closeForm() {
-    if (saving) return;
-    setShowForm(false);
-    setEditingRestaurant(null);
-    setForm(emptyForm);
-  }
-
-  function updateForm(field: keyof RestaurantForm, value: string | boolean) {
-    setForm((current) => ({ ...current, [field]: value }));
-  }
-
-  async function saveRestaurant(event: FormEvent) {
-    event.preventDefault();
-    setPendingRestaurantFormSave(true);
-  }
-
-  async function confirmSaveRestaurant() {
-    setPendingRestaurantFormSave(false);
-    setSaving(true);
-    setRestaurantError('');
-
-    const payload = {
-      name: form.name.trim(),
-      slug: form.slug.trim().toLowerCase(),
-      tagline: form.tagline.trim(),
-      logo_url: form.logo_url.trim() || null,
-      location_text: form.location_text.trim() || null,
-      contact_number: form.contact_number.trim() || null,
-      email: form.email.trim() || null,
-      is_active: form.is_active,
-    };
-
-    const result = editingRestaurant
-      ? await supabase.from('restaurants').update(payload).eq('id', editingRestaurant.id)
-      : await supabase.from('restaurants').insert(payload).select('id').single();
-
-    if (result.error) {
-      setRestaurantError(result.error.message);
-      setSaving(false);
-      return;
-    }
-
-    const restaurantId = editingRestaurant?.id ?? (result.data as { id: string } | null)?.id ?? null;
-
-    const restaurantChanges = editingRestaurant
-      ? Object.fromEntries(
-          Object.entries({
-            name: [editingRestaurant.name, payload.name],
-            slug: [editingRestaurant.slug, payload.slug],
-            tagline: [editingRestaurant.tagline, payload.tagline],
-            logo_url: [editingRestaurant.logo_url, payload.logo_url],
-            location_text: [editingRestaurant.location_text, payload.location_text],
-            contact_number: [editingRestaurant.contact_number, payload.contact_number],
-            email: [editingRestaurant.email, payload.email],
-            is_active: [editingRestaurant.is_active, payload.is_active],
-          }).filter(([, [oldValue, newValue]]) => oldValue !== newValue),
-        )
-      : {};
-
-    await recordAdminAudit(
-      editingRestaurant ? 'Restaurant profile updated' : 'Restaurant created',
-      restaurantId,
-      'restaurant',
-      restaurantId,
-      editingRestaurant
-        ? {
-            changes: restaurantChanges,
-          }
-        : {
-            created_values: {
-              name: payload.name,
-              slug: payload.slug,
-              tagline: payload.tagline,
-              logo_url: payload.logo_url,
-              location_text: payload.location_text,
-              contact_number: payload.contact_number,
-              email: payload.email,
-              is_active: payload.is_active,
-            },
-          },
-    );
-
-    setSaving(false);
-    closeForm();
-    await loadRestaurants();
-  }
-
-  async function toggleRestaurant(restaurant: Restaurant) {
-    const nextStatus = !restaurant.is_active;
-    setRestaurantError('');
-
-    const { error } = await supabase
-      .from('restaurants')
-      .update({ is_active: nextStatus })
-      .eq('id', restaurant.id);
-
-    if (error) {
-      setRestaurantError(error.message);
-      return;
-    }
-
-    await recordAdminAudit(
-      nextStatus ? 'Restaurant activated' : 'Restaurant deactivated',
-      restaurant.id,
-      'restaurant',
-      restaurant.id,
-      {
-        name: restaurant.name,
-        previous_status: restaurant.is_active ? 'active' : 'inactive',
-        new_status: nextStatus ? 'active' : 'inactive',
-      },
-    );
-
-    await loadRestaurants();
-  }
-
-  if (isAdminPage(adminPage, 'dashboard')) {
-    return (
-      <main className="admin-shell">
-        <header className="admin-header">
-          <div className="brand-block">
-            <img className="company-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
-            <div><div className="eyebrow">WEB2TABLE Platform</div><h1>System Admin</h1></div>
-          </div>
-          <div className="admin-header-actions">
-            <button className={isAdminPage(adminPage, 'dashboard') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openDashboard()} title="Dashboard" aria-label="Dashboard">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
-            </button>
-            <button className={isAdminPage(adminPage, 'restaurants') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openRestaurants()} title="Restaurants" aria-label="Restaurants">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V20h11V9.5M9.5 20v-6h5v6"/></svg>
-            </button>
-            <button className={isAdminPage(adminPage, 'audit') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
-            </button>
-            <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
-            </button>
-          </div>
-        </header>
-        {accountMenuOpen && (
-          <div className="account-menu">
-            <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
-            {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
-            <button type="button" className="account-menu-item" onClick={(event) => { event.preventDefault(); event.stopPropagation(); void signOut(); }}>Sign out</button>
-          </div>
-        )}
-        <section className="dashboard-card system-dashboard-card">
-          <div className="section-heading">
-            <div><div className="eyebrow">Platform Overview</div><h2>Dashboard</h2><p>Monitor restaurants, administrator access, and recent platform activity.</p></div>
-          </div>
-          {dashboardError && <div className="error-banner">{dashboardError}</div>}
-          {dashboardLoading && !dashboardSummary ? (
-            <div className="empty-state">Loading platform overview...</div>
-          ) : (
-            <>              <div className="dashboard-section-label">Restaurant Operations</div>
-              <div className="system-stats-grid">
-                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openRestaurants()}>
-                  <span>Total restaurants</span>
-                  <strong>{dashboardSummary?.total_restaurants ?? 0}</strong>
-                </button>
-                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openRestaurants()}>
-                  <span>Active restaurants</span>
-                  <strong>{dashboardSummary?.active_restaurants ?? 0}</strong>
-                </button>
-                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openRestaurants()}>
-                  <span>Inactive restaurants</span>
-                  <strong>{dashboardSummary?.inactive_restaurants ?? 0}</strong>
-                </button>
-              </div>
-              <div className="dashboard-section-label">System Administration</div>
-              <div className="system-stats-grid">
-                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openAdministrators()} disabled={adminAccessLevel !== 'owner'} title={adminAccessLevel === 'owner' ? 'Open System Administrators' : 'Administrator management is restricted to the Owner'}>
-                  <span>Active administrators</span>
-                  <strong>{dashboardSummary?.active_system_administrators ?? 0}</strong>
-                </button>
-                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openAdministrators()} disabled={adminAccessLevel !== 'owner'} title={adminAccessLevel === 'owner' ? 'Open System Administrators' : 'Administrator management is restricted to the Owner'}>
-                  <span>Pending invitations</span>
-                  <strong>{dashboardSummary?.pending_system_administrators ?? 0}</strong>
-                </button>
-              </div>
-              <div className="dashboard-section-label">Restaurant Monitoring</div>
-              <div className="dashboard-monitoring">
-                <div className="dashboard-monitoring-heading">
-                  <div>
-                    <div className="eyebrow">Live Operations</div>
-                    <h3>Restaurant Activity</h3>
-                    <p>Monitor customer and order activity across all restaurants.</p>
-                  </div>
-                </div>
-                {dashboardRestaurantMonitoring.length === 0 ? (
-                  <div className="empty-state">No restaurant monitoring data available.</div>
-                ) : (
-                  <div className="dashboard-monitoring-table-wrap">
-                    <table className="dashboard-monitoring-table">
-                      <thead>
-                        <tr>
-                          <th>Restaurant</th>
-                          <th>Status</th>
-                          <th>Customer Accounts</th>
-                          <th>Logged In Now</th>
-                          <th>Customers Ordered Today</th>
-                          <th>Orders Today</th>
-                          <th>Processing</th>
-                          <th>Last Activity</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dashboardRestaurantMonitoring.map((monitoring) => (
-                          <tr key={monitoring.restaurant_id}>
-                            <td><strong>{monitoring.restaurant_name}</strong></td>
-                            <td>
-                              <span className={monitoring.is_active ? 'status active' : 'status inactive'}>
-                                {monitoring.is_active ? 'Active' : 'Inactive'}
-                              </span>
-                            </td>
-                            <td>{monitoring.customer_accounts}</td>
-                            <td>{monitoring.logged_in_now ?? '—'}</td>
-                            <td>{monitoring.customers_ordered_today}</td>
-                            <td>{monitoring.orders_today}</td>
-                            <td>{monitoring.processing_orders}</td>
-                            <td className="dashboard-monitoring-last-activity">
-                              {monitoring.last_activity ? new Date(monitoring.last_activity).toLocaleString() : 'No activity'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-              <div className="dashboard-activity">
-                <div className="dashboard-activity-heading">
-                  <div><div className="eyebrow">Accountability</div><h3>Recent Platform Activity</h3></div>
-                  <button className="secondary-button" type="button" onClick={() => openAuditLogs()}>View Audit Logs</button>
-                </div>
-                {dashboardRecentLogs.length === 0 ? <div className="empty-state">No recent platform activity.</div> : (
-                  <div className="dashboard-activity-list">
-                    {dashboardRecentLogs.map((log) => (
-                      <button className="dashboard-activity-row" type="button" key={log.id} onClick={() => openAuditLog(log)}>
-                        <div><strong>{log.action}</strong><span>{log.admin_name || log.admin_email || 'Unknown administrator'}{log.restaurant_name ? ` • ${log.restaurant_name}` : ''}</span></div>
-                        <time>{new Date(log.created_at).toLocaleString()}</time>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </section>
-      </main>
-    );
-  }
-
-  if (isAdminPage(adminPage, 'administrators')) {
-    return (
-      <main className="admin-shell">
-        <header className="admin-header">
-          <div className="brand-block">
-            <img className="company-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
-            <div><div className="eyebrow">Account</div><h1>System Administrators</h1></div>
-          </div>
-          <div className="admin-header-actions">
-            <button className={isAdminPage(adminPage, 'dashboard') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openDashboard()} title="Dashboard" aria-label="Dashboard">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
-            </button>
-            <button className={isAdminPage(adminPage, 'restaurants') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openRestaurants()} title="Restaurants" aria-label="Restaurants">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V20h11V9.5M9.5 20v-6h5v6"/></svg>
-            </button>
-            <button className={isAdminPage(adminPage, 'audit') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
-            </button>
-            <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
-            </button>
-          </div>
-        </header>
-        {accountMenuOpen && (
-          <div className="account-menu">
-            <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
-            <button className="account-menu-item" onClick={() => setAccountMenuOpen(false)}>System Administrators</button>
-            <button className="account-menu-item" onClick={signOut}>Sign out</button>
-          </div>
-        )}
-        <section className="dashboard-card administrators-card">
-          <div className="section-heading">
-            <div><div className="eyebrow">Access Control</div><h2>System Administrators</h2><p>Manage who can access the WEB2TABLE System Admin platform.</p></div>
-            <button onClick={() => { setInviteAdminError(''); setInviteAdminSuccess(''); setShowInviteAdmin(true); }}>+ Invite Administrator</button>
-          </div>
-          {administratorsError && <div className="error-banner">{administratorsError}</div>}
-          {inviteAdminSuccess && <div className="success-banner">{inviteAdminSuccess}</div>}
-          {administratorsLoading ? <div className="empty-state">Loading administrators...</div> : administrators.length === 0 ? (
-            <div className="empty-state"><strong>No administrators found</strong><span>Invite an administrator to get started.</span></div>
-          ) : (
-            <div className="administrators-table-wrap">
-              <table className="administrators-table">
-                <thead><tr><th>Administrator</th><th>Access</th><th>Status</th><th>Granted by</th><th>Actions</th></tr></thead>
-                <tbody>
-                  {administrators.map((admin) => (
-                    <tr key={admin.id}>
-                      <td><strong>{admin.name || admin.email || 'Unnamed administrator'}</strong>{admin.name && admin.email && <span className="audit-subtext">{admin.email}</span>}</td>
-                      <td><span className="access-badge">{admin.access_level === 'owner' ? 'Owner' : admin.access_level === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</span></td>
-                      <td><span className={admin.status === 'active' ? 'status active' : 'status inactive'}>{admin.status === 'pending' ? 'Pending invite' : admin.status === 'revoked' ? 'Revoked' : 'Active'}</span></td>
-                      <td>{admin.granted_by_email || '—'}</td>
-                      <td>
-                        {admin.access_level === 'owner' ? <span className="audit-subtext">Owner account</span> : admin.status === 'revoked' ? (
-                          <div className="staff-actions">
-                            <button className="secondary-button" onClick={() => setPendingAdminAction({ type: 'restore', admin })}>Restore</button>
-                            <button className="danger-button" onClick={() => setPendingAdminAction({ type: 'delete', admin })}>Delete</button>
-                          </div>
-                        ) : (
-                          <div className="staff-actions">
-                            <button className="secondary-button" onClick={() => setPendingAdminAction({ type: 'change', admin, nextAccessLevel: admin.access_level === 'administrator' ? 'view_only' : 'administrator' })}>{admin.access_level === 'administrator' ? 'Make View Only' : 'Make Full Access'}</button>
-                            <button className="danger-button" onClick={() => setPendingAdminAction({ type: 'revoke', admin })}>Revoke</button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-        {showInviteAdmin && (
-          <div className="modal-backdrop" role="presentation">
-            <section className="modal-card administrator-invite-modal" role="dialog" aria-modal="true" aria-labelledby="invite-admin-title">
-              <div className="modal-heading"><div><div className="eyebrow">System Administrator</div><h2 id="invite-admin-title">Invite Administrator</h2></div><button className="icon-button" type="button" onClick={() => setShowInviteAdmin(false)} disabled={inviteAdminSaving} aria-label="Close">×</button></div>
-              <form className="restaurant-form" onSubmit={inviteAdministrator}>
-                <label>Email address<input type="email" value={inviteAdminEmail} onChange={(event) => setInviteAdminEmail(event.target.value)}  autoComplete="email" required /></label>
-                <label>Access Level<select value={inviteAdminAccessLevel} onChange={(event) => setInviteAdminAccessLevel(event.target.value as 'administrator' | 'view_only')}><option value="administrator">Administrator — Full Access</option><option value="view_only">View Only</option></select></label>
-                <div className="administrator-invite-warning"><strong>The invitation will be emailed to this address.</strong><span>The account will remain pending until the invitee creates a password.</span></div>
-                {inviteAdminError && <div className="error-banner">{inviteAdminError}</div>}
-                <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setShowInviteAdmin(false)} disabled={inviteAdminSaving}>Cancel</button><button type="submit" disabled={inviteAdminSaving}>{inviteAdminSaving ? 'Sending...' : 'Send Invitation'}</button></div>
-              </form>
-            </section>
-          </div>
-        )}
-        {inviteAdminConfirmationEmail && (
-          <div className="modal-backdrop" role="presentation">
-            <section className="modal-card administrator-invite-success-modal" role="dialog" aria-modal="true" aria-labelledby="invite-admin-success-title">
-              <div className="modal-heading">
-                <div>
-                  <div className="eyebrow">Invitation Sent</div>
-                  <h2 id="invite-admin-success-title">Invitation email sent</h2>
-                </div>
-                <button
-                  className="icon-button"
-                  type="button"
-                  onClick={() => setInviteAdminConfirmationEmail('')}
-                  aria-label="Close"
-                >
-                  ×
-                </button>
-              </div>
-              <div className="administrator-action-content">
-                <div className="success-banner">The invitation email has been sent successfully.</div>
-                <p>The invitation was sent to <strong>{inviteAdminConfirmationEmail}</strong>.</p>
-                <div className="administrator-action-warning">
-                  <strong>The account is currently pending.</strong>
-                  <span>The invitee must open the invitation email and create a password before the account becomes active.</span>
-                </div>
-              </div>
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  onClick={() => setInviteAdminConfirmationEmail('')}
-                >
-                  Done
-                </button>
-              </div>
-            </section>
-          </div>
-        )}
-        {pendingAdminAction && (
-          <div className="modal-backdrop" role="presentation">
-            <section className="modal-card administrator-action-modal" role="dialog" aria-modal="true" aria-labelledby="admin-action-title">
-              <div className="modal-heading"><div><div className="eyebrow">Access Control</div><h2 id="admin-action-title">{pendingAdminAction.type === 'revoke' ? 'Revoke access?' : pendingAdminAction.type === 'restore' ? 'Restore access?' : pendingAdminAction.type === 'delete' ? 'Delete administrator?' : 'Change access level?'}</h2></div><button className="icon-button" type="button" onClick={() => setPendingAdminAction(null)} disabled={adminActionSaving} aria-label="Close">×</button></div>
-              <div className="administrator-action-content"><p><strong>{pendingAdminAction.admin.email || pendingAdminAction.admin.name || 'This administrator'}</strong></p><div className="administrator-action-warning"><strong>{pendingAdminAction.type === 'revoke' ? 'This administrator will no longer be able to access System Admin.' : pendingAdminAction.type === 'restore' ? 'This administrator will regain their previous access level.' : pendingAdminAction.type === 'delete' ? 'This permanently deletes the revoked administrator account and removes its System Admin access. This cannot be undone.' : 'Access will change to ' + (pendingAdminAction.nextAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only') + '.'}</strong><span>{pendingAdminAction.type === 'delete' ? 'Only a revoked account can be permanently deleted. Audit history is retained.' : 'The Owner account cannot be changed or revoked.'}</span></div>{administratorsError && <div className="error-banner">{administratorsError}</div>}</div>
-              <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setPendingAdminAction(null)} disabled={adminActionSaving}>Cancel</button><button type="button" className={pendingAdminAction.type === 'revoke' || pendingAdminAction.type === 'delete' ? 'danger-button' : ''} onClick={() => void confirmAdministratorAction()} disabled={adminActionSaving}>{adminActionSaving ? 'Saving...' : pendingAdminAction.type === 'delete' ? 'Delete permanently' : 'Confirm'}</button></div>
-            </section>
-          </div>
-        )}
-      </main>
-    );
-  }
-
-  if (isAdminPage(adminPage, 'audit')) {
-    return (
-
-      <main className="admin-shell">
-        <header className="admin-header">
-          <div className="brand-block">
-            <img className="company-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
-            <div>
-              <div className="eyebrow">WEB2TABLE Platform</div>
-              <h1>System Admin</h1>
-            </div>
-          </div>
-          <div className="admin-header-actions">
-            <button className={isAdminPage(adminPage, 'dashboard') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openDashboard()} title="Dashboard" aria-label="Dashboard">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
-            </button>
-            <button className={isAdminPage(adminPage, 'restaurants') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openRestaurants()} title="Restaurants" aria-label="Restaurants">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V20h11V9.5M9.5 20v-6h5v6"/></svg>
-            </button>
-            <button className={isAdminPage(adminPage, 'audit') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
-            </button>
-            <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
-            </button>
-          </div>
-        </header>
-
-        {accountMenuOpen && (
-          <div className="account-menu">
-            <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
-            {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
-            <button className="account-menu-item" onClick={signOut}>Sign out</button>
-          </div>
-        )}
-
-        <section className="dashboard-card audit-page-card">
-          <div className="section-heading">
-            <div>
-              <div className="eyebrow">Accountability</div>
-              <h2>Audit Logs</h2>
-              <p>Review System Administrator sign-ins and administrative changes across the platform.</p>
-            </div>
-          </div>
-
-          <div className="audit-summary-row">
-            <div className="stat-card"><span>Total records</span><strong>{auditLogs.length}</strong></div>
-            <div className="stat-card"><span>Administrative actions</span><strong>{auditLogs.filter((log) => log.event_type === 'ADMIN_ACTION').length}</strong></div>
-            <div className="stat-card"><span>Authentication events</span><strong>{auditLogs.filter((log) => log.event_type !== 'ADMIN_ACTION').length}</strong></div>
-          </div>
-
-          <div className="audit-toolbar">
-            <input
-              className="search-input"
-              type="search"
-              placeholder="Search administrator, restaurant, action..."
-              value={auditSearch}
-              onChange={(event) => setAuditSearch(event.target.value)}
-            />
-            <select value={auditEventFilter} onChange={(event) => setAuditEventFilter(event.target.value)}>
-              <option value="ALL">All events</option>
-              <option value="ADMIN_ACTION">Administrative actions</option>
-              <option value="LOGIN_SUCCESS">Login success</option>
-              <option value="LOGOUT">Logout</option>
-              <option value="ACCESS_DENIED">Access denied</option>
-            </select>
-            <select value={auditDatePreset} onChange={(event) => setAuditDatePreset(event.target.value as typeof auditDatePreset)}>
-              <option value="ALL">All dates</option>
-              <option value="TODAY">Today</option>
-              <option value="7_DAYS">Last 7 days</option>
-              <option value="30_DAYS">Last 30 days</option>
-              <option value="CUSTOM">Custom range</option>
-            </select>
-            {auditDatePreset === 'CUSTOM' && (
-              <>
-                <input type="date" value={auditStartDate} onChange={(event) => setAuditStartDate(event.target.value)} aria-label="Audit start date" />
-                <input type="date" value={auditEndDate} onChange={(event) => setAuditEndDate(event.target.value)} aria-label="Audit end date" />
-              </>
-            )}
-             <button className="secondary-button audit-export-button" type="button" onClick={exportAuditLogs} disabled={filteredAuditLogs.length === 0}>Export CSV</button>
-          </div>
-
-          {auditError && <div className="error-banner">{auditError}</div>}
-
-          {auditLoading ? (
-            <div className="empty-state">Loading audit logs...</div>
-          ) : filteredAuditLogs.length === 0 ? (
-            <div className="empty-state">
-              <strong>No audit records found</strong>
-              <span>Try a different search or filter.</span>
-            </div>
-          ) : (
-            <div className="audit-table-wrap">
-              <table className="audit-table">
-                <thead>
-                  <tr>
-                    <th>Date &amp; Time</th>
-                    <th>Administrator</th>
-                    <th>Restaurant</th>
-                    <th>Event</th>
-                    <th>Action</th>
-                    <th>Changes / Details</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredAuditLogs.map((log) => {
-                    const changes = (log.details?.changes ?? null) as Record<string, unknown> | null;
-                    const createdValues = (log.details?.created_values ?? null) as Record<string, unknown> | null;
-
-                    return (
-                      <tr key={log.id}>
-                        <td className="audit-date">{new Date(log.created_at).toLocaleString()}</td>
-                        <td>
-                          <strong>{log.admin_name || log.admin_email || 'Unknown administrator'}</strong>
-                          {log.admin_name && log.admin_email && <span className="audit-subtext">{log.admin_email}</span>}
-                        </td>
-                        <td>{log.restaurant_name || '—'}</td>
-                        <td><span className={log.event_type === 'ADMIN_ACTION' ? 'audit-event admin' : 'audit-event'}>{log.event_type}</span></td>
-                        <td>{log.action}</td>
-                        <td>
-                          {changes && Object.keys(changes).length > 0 ? (
-                            <div className="audit-change-list">
-                              {Object.entries(changes).map(([field, value]) => {
-                                const pair = Array.isArray(value) ? value : [];
-                                return (
-                                  <div className="audit-change" key={field}>
-                                    <strong>{field.replaceAll('_', ' ')}</strong>
-                                    <span>{String(pair[0] ?? '—')} → {String(pair[1] ?? '—')}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : createdValues ? (
-                            <div className="audit-change-list">
-                              <div className="audit-change"><strong>Created with</strong><span>{String(createdValues.name ?? 'restaurant')}</span></div>
-                            </div>
-                          ) : (
-                            <span className="audit-subtext">{String(log.details?.source ?? '—')}</span>
-                          )}
-                        </td>
-                         <td>
-                           <button className="secondary-button audit-view-button" type="button" onClick={() => openAuditLog(log)}>View</button>
-                         </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <div className="audit-pagination">
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => void loadAuditLogs(Math.max(0, auditPageNumber - 1))}
-              disabled={auditLoading || auditPageNumber === 0}
-            >
-              Previous
-            </button>
-            <span>Page {auditPageNumber + 1}</span>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => void loadAuditLogs(auditPageNumber + 1)}
-              disabled={auditLoading || !auditHasMore}
-            >
-              Next
-            </button>
-          </div>
-        </section>
-      </main>
-    );
-  }
-
-
-  {selectedAuditLog && (
-    <div className="modal-backdrop audit-detail-backdrop" role="presentation">
-      <section className="modal-card audit-detail-modal" role="dialog" aria-modal="true" aria-labelledby="audit-detail-title">
-        <div className="modal-heading">
-          <div><div className="eyebrow">Audit Event</div><h2 id="audit-detail-title">Event details</h2></div>
-          <button className="icon-button" type="button" onClick={() => { if (new URLSearchParams(window.location.search).get('auditId')) window.history.back(); else setSelectedAuditLog(null); }} aria-label="Close">×</button>
-        </div>
-        <div className="audit-detail-grid">
-          <div><span>Date &amp; Time</span><strong>{new Date(selectedAuditLog.created_at).toLocaleString()}</strong></div>
-          <div><span>Administrator</span><strong>{selectedAuditLog.admin_name || selectedAuditLog.admin_email || 'Unknown administrator'}</strong></div>
-          <div><span>Restaurant</span><strong>{selectedAuditLog.restaurant_name || '—'}</strong></div>
-          <div><span>Event</span><strong>{selectedAuditLog.event_type}</strong></div>
-          <div><span>Action</span><strong>{selectedAuditLog.action}</strong></div>
-          <div><span>Entity</span><strong>{selectedAuditLog.entity_type || '—'}</strong></div>
-        </div>
-        <div className="audit-json-panel"><div className="eyebrow">Recorded details</div><pre>{JSON.stringify(selectedAuditLog.details ?? {}, null, 2)}</pre></div>
-        <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => { if (new URLSearchParams(window.location.search).get('auditId')) window.history.back(); else setSelectedAuditLog(null); }}>Close</button></div>
-      </section>
-    </div>
-  )}
-
-  function openRestaurant(restaurant: Restaurant, pushHistory = true) {
-    if (pushHistory) pushNavigation('restaurant', { restaurantId: restaurant.id });
-    setSelectedRestaurant(restaurant);
-    setAdminPage('restaurants');
-    setManageTab('overview');
-    setOwnerEmail('');
-    setOwnerName('');
-    setOwnerUserId('');
-    setOwnerError('');
-    setDomain('');
-    setDomainError('');
-    setSettingsError('');
-    setRestaurantError('');
-  }
-
-  function closeRestaurant(pushHistory = true) {
-    if (pushHistory) pushNavigation('restaurants');
-    setSelectedRestaurant(null);
-  }
-
-  function startCreate() {
-    setEditingRestaurant(null);
-    setForm(emptyForm);
-    setRestaurantError('');
-    setShowForm(true);
-  }
-
-  function startEdit(restaurant: Restaurant) {
-    setEditingRestaurant(restaurant);
-    setForm({
-      name: restaurant.name,
-      slug: restaurant.slug,
-      tagline: restaurant.tagline,
-      logo_url: restaurant.logo_url ?? '',
-      location_text: restaurant.location_text ?? '',
-      contact_number: restaurant.contact_number ?? '',
-      email: restaurant.email ?? '',
-      is_active: restaurant.is_active,
-    });
-    setRestaurantError('');
-    setShowForm(true);
-  }
-
-  function closeForm() {
-    if (saving) return;
-    setShowForm(false);
-    setEditingRestaurant(null);
-    setForm(emptyForm);
-  }
-
-  function updateForm(field: keyof RestaurantForm, value: string | boolean) {
-    setForm((current) => ({ ...current, [field]: value }));
-  }
-
-  async function saveRestaurant(event: FormEvent) {
-    event.preventDefault();
-    setPendingRestaurantFormSave(true);
-  }
-
-  async function confirmSaveRestaurant() {
-    setPendingRestaurantFormSave(false);
-    setSaving(true);
-    setRestaurantError('');
-
-    const payload = {
-      name: form.name.trim(),
-      slug: form.slug.trim().toLowerCase(),
-      tagline: form.tagline.trim(),
-      logo_url: form.logo_url.trim() || null,
-      location_text: form.location_text.trim() || null,
-      contact_number: form.contact_number.trim() || null,
-      email: form.email.trim() || null,
-      is_active: form.is_active,
-    };
-
-    const result = editingRestaurant
-      ? await supabase.from('restaurants').update(payload).eq('id', editingRestaurant.id)
-      : await supabase.from('restaurants').insert(payload).select('id').single();
-
-    if (result.error) {
-      setRestaurantError(result.error.message);
-      setSaving(false);
-      return;
-    }
-
-    const restaurantId = editingRestaurant?.id ?? (result.data as { id: string } | null)?.id ?? null;
-
-    const restaurantChanges = editingRestaurant
-      ? Object.fromEntries(
-          Object.entries({
-            name: [editingRestaurant.name, payload.name],
-            slug: [editingRestaurant.slug, payload.slug],
-            tagline: [editingRestaurant.tagline, payload.tagline],
-            logo_url: [editingRestaurant.logo_url, payload.logo_url],
-            location_text: [editingRestaurant.location_text, payload.location_text],
-            contact_number: [editingRestaurant.contact_number, payload.contact_number],
-            email: [editingRestaurant.email, payload.email],
-            is_active: [editingRestaurant.is_active, payload.is_active],
-          }).filter(([, [oldValue, newValue]]) => oldValue !== newValue),
-        )
-      : {};
-
-    await recordAdminAudit(
-      editingRestaurant ? 'Restaurant profile updated' : 'Restaurant created',
-      restaurantId,
-      'restaurant',
-      restaurantId,
-      editingRestaurant
-        ? {
-            changes: restaurantChanges,
-          }
-        : {
-            created_values: {
-              name: payload.name,
-              slug: payload.slug,
-              tagline: payload.tagline,
-              logo_url: payload.logo_url,
-              location_text: payload.location_text,
-              contact_number: payload.contact_number,
-              email: payload.email,
-              is_active: payload.is_active,
-            },
-          },
-    );
-
-    setSaving(false);
-    closeForm();
-    await loadRestaurants();
-  }
-
-  async function toggleRestaurant(restaurant: Restaurant) {
-    const nextStatus = !restaurant.is_active;
-    setRestaurantError('');
-
-    const { error } = await supabase
-      .from('restaurants')
-      .update({ is_active: nextStatus })
-      .eq('id', restaurant.id);
-
-    if (error) {
-      setRestaurantError(error.message);
-      return;
-    }
-
-    await recordAdminAudit(
-      nextStatus ? 'Restaurant activated' : 'Restaurant deactivated',
-      restaurant.id,
-      'restaurant',
-      restaurant.id,
-      {
-        name: restaurant.name,
-        previous_status: restaurant.is_active ? 'active' : 'inactive',
-        new_status: nextStatus ? 'active' : 'inactive',
-      },
-    );
-
-    await loadRestaurants();
-  }
-
   if (loading) return <main className="screen-center">Loading...</main>;
 
   if (inviteSetup) {
@@ -2468,6 +1215,632 @@ function App() {
         </section>
       </main>
     );
+  }
+
+  if (isAdminPage(adminPage, 'dashboard')) {
+    return (
+      <main className="admin-shell">
+        <header className="admin-header">
+          <div className="brand-block">
+            <img className="company-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
+            <div><div className="eyebrow">WEB2TABLE Platform</div><h1>System Admin</h1></div>
+          </div>
+          <div className="admin-header-actions">
+            <button className={isAdminPage(adminPage, 'dashboard') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openDashboard()} title="Dashboard" aria-label="Dashboard">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+            </button>
+            <button className={isAdminPage(adminPage, 'restaurants') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openRestaurants()} title="Restaurants" aria-label="Restaurants">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V20h11V9.5M9.5 20v-6h5v6"/></svg>
+            </button>
+            <button className={isAdminPage(adminPage, 'audit') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
+            </button>
+            <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
+            </button>
+          </div>
+        </header>
+        {accountMenuOpen && (
+          <div className="account-menu">
+            <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
+            {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
+            <button type="button" className="account-menu-item" onClick={(event) => { event.preventDefault(); event.stopPropagation(); void signOut(); }}>Sign out</button>
+          </div>
+        )}
+        <section className="dashboard-card system-dashboard-card">
+          <div className="section-heading">
+            <div><div className="eyebrow">Platform Overview</div><h2>Dashboard</h2><p>Monitor restaurants, administrator access, and recent platform activity.</p></div>
+          </div>
+          {dashboardError && <div className="error-banner">{dashboardError}</div>}
+          {dashboardLoading && !dashboardSummary ? (
+            <div className="empty-state">Loading platform overview...</div>
+          ) : (
+            <>              <div className="dashboard-section-label">Restaurant Operations</div>
+              <div className="system-stats-grid">
+                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openRestaurants()}>
+                  <span>Total restaurants</span>
+                  <strong>{dashboardSummary?.total_restaurants ?? 0}</strong>
+                </button>
+                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openRestaurants()}>
+                  <span>Active restaurants</span>
+                  <strong>{dashboardSummary?.active_restaurants ?? 0}</strong>
+                </button>
+                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openRestaurants()}>
+                  <span>Inactive restaurants</span>
+                  <strong>{dashboardSummary?.inactive_restaurants ?? 0}</strong>
+                </button>
+              </div>
+              <div className="dashboard-section-label">System Administration</div>
+              <div className="system-stats-grid">
+                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openAdministrators()} disabled={adminAccessLevel !== 'owner'} title={adminAccessLevel === 'owner' ? 'Open System Administrators' : 'Administrator management is restricted to the Owner'}>
+                  <span>Active administrators</span>
+                  <strong>{dashboardSummary?.active_system_administrators ?? 0}</strong>
+                </button>
+                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openAdministrators()} disabled={adminAccessLevel !== 'owner'} title={adminAccessLevel === 'owner' ? 'Open System Administrators' : 'Administrator management is restricted to the Owner'}>
+                  <span>Pending invitations</span>
+                  <strong>{dashboardSummary?.pending_system_administrators ?? 0}</strong>
+                </button>
+              </div>
+              <div className="dashboard-section-label">Restaurant Monitoring</div>
+              <div className="dashboard-monitoring">
+                <div className="dashboard-monitoring-heading">
+                  <div>
+                    <div className="eyebrow">Live Operations</div>
+                    <h3>Restaurant Activity</h3>
+                    <p>Monitor customer and order activity across all restaurants.</p>
+                  </div>
+                </div>
+                {dashboardRestaurantMonitoring.length === 0 ? (
+                  <div className="empty-state">No restaurant monitoring data available.</div>
+                ) : (
+                  <div className="dashboard-monitoring-table-wrap">
+                    <table className="dashboard-monitoring-table">
+                      <thead>
+                        <tr>
+                          <th>Restaurant</th>
+                          <th>Status</th>
+                          <th>Customer Accounts</th>
+                          <th>Logged In Now</th>
+                          <th>Customers Ordered Today</th>
+                          <th>Orders Today</th>
+                          <th>Processing</th>
+                          <th>Last Activity</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dashboardRestaurantMonitoring.map((monitoring) => (
+                          <tr key={monitoring.restaurant_id}>
+                            <td><strong>{monitoring.restaurant_name}</strong></td>
+                            <td>
+                              <span className={monitoring.is_active ? 'status active' : 'status inactive'}>
+                                {monitoring.is_active ? 'Active' : 'Inactive'}
+                              </span>
+                            </td>
+                            <td>{monitoring.customer_accounts}</td>
+                            <td>{monitoring.logged_in_now ?? '—'}</td>
+                            <td>{monitoring.customers_ordered_today}</td>
+                            <td>{monitoring.orders_today}</td>
+                            <td>{monitoring.processing_orders}</td>
+                            <td className="dashboard-monitoring-last-activity">
+                              {monitoring.last_activity ? new Date(monitoring.last_activity).toLocaleString() : 'No activity'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+              <div className="dashboard-activity">
+                <div className="dashboard-activity-heading">
+                  <div><div className="eyebrow">Accountability</div><h3>Recent Platform Activity</h3></div>
+                  <button className="secondary-button" type="button" onClick={() => openAuditLogs()}>View Audit Logs</button>
+                </div>
+                {dashboardRecentLogs.length === 0 ? <div className="empty-state">No recent platform activity.</div> : (
+                  <div className="dashboard-activity-list">
+                    {dashboardRecentLogs.map((log) => (
+                      <button className="dashboard-activity-row" type="button" key={log.id} onClick={() => openAuditLog(log)}>
+                        <div><strong>{log.action}</strong><span>{log.admin_name || log.admin_email || 'Unknown administrator'}{log.restaurant_name ? ` • ${log.restaurant_name}` : ''}</span></div>
+                        <time>{new Date(log.created_at).toLocaleString()}</time>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </section>
+      </main>
+    );
+  }
+
+  if (isAdminPage(adminPage, 'administrators')) {
+    return (
+      <main className="admin-shell">
+        <header className="admin-header">
+          <div className="brand-block">
+            <img className="company-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
+            <div><div className="eyebrow">Account</div><h1>System Administrators</h1></div>
+          </div>
+          <div className="admin-header-actions">
+            <button className={isAdminPage(adminPage, 'dashboard') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openDashboard()} title="Dashboard" aria-label="Dashboard">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+            </button>
+            <button className={isAdminPage(adminPage, 'restaurants') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openRestaurants()} title="Restaurants" aria-label="Restaurants">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V20h11V9.5M9.5 20v-6h5v6"/></svg>
+            </button>
+            <button className={isAdminPage(adminPage, 'audit') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
+            </button>
+            <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
+            </button>
+          </div>
+        </header>
+        {accountMenuOpen && (
+          <div className="account-menu">
+            <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
+            <button className="account-menu-item" onClick={() => setAccountMenuOpen(false)}>System Administrators</button>
+            <button className="account-menu-item" onClick={signOut}>Sign out</button>
+          </div>
+        )}
+        <section className="dashboard-card administrators-card">
+          <div className="section-heading">
+            <div><div className="eyebrow">Access Control</div><h2>System Administrators</h2><p>Manage who can access the WEB2TABLE System Admin platform.</p></div>
+            <button onClick={() => { setInviteAdminError(''); setInviteAdminSuccess(''); setShowInviteAdmin(true); }}>+ Invite Administrator</button>
+          </div>
+          {administratorsError && <div className="error-banner">{administratorsError}</div>}
+          {inviteAdminSuccess && <div className="success-banner">{inviteAdminSuccess}</div>}
+          {administratorsLoading ? <div className="empty-state">Loading administrators...</div> : administrators.length === 0 ? (
+            <div className="empty-state"><strong>No administrators found</strong><span>Invite an administrator to get started.</span></div>
+          ) : (
+            <div className="administrators-table-wrap">
+              <table className="administrators-table">
+                <thead><tr><th>Administrator</th><th>Access</th><th>Status</th><th>Granted by</th><th>Actions</th></tr></thead>
+                <tbody>
+                  {administrators.map((admin) => (
+                    <tr key={admin.id}>
+                      <td><strong>{admin.name || admin.email || 'Unnamed administrator'}</strong>{admin.name && admin.email && <span className="audit-subtext">{admin.email}</span>}</td>
+                      <td><span className="access-badge">{admin.access_level === 'owner' ? 'Owner' : admin.access_level === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</span></td>
+                      <td><span className={admin.status === 'active' ? 'status active' : 'status inactive'}>{admin.status === 'pending' ? 'Pending invite' : admin.status === 'revoked' ? 'Revoked' : 'Active'}</span></td>
+                      <td>{admin.granted_by_email || '—'}</td>
+                      <td>
+                        {admin.access_level === 'owner' ? <span className="audit-subtext">Owner account</span> : admin.status === 'revoked' ? (
+                          <div className="staff-actions">
+                            <button className="secondary-button" onClick={() => setPendingAdminAction({ type: 'restore', admin })}>Restore</button>
+                            <button className="danger-button" onClick={() => setPendingAdminAction({ type: 'delete', admin })}>Delete</button>
+                          </div>
+                        ) : (
+                          <div className="staff-actions">
+                            <button className="secondary-button" onClick={() => setPendingAdminAction({ type: 'change', admin, nextAccessLevel: admin.access_level === 'administrator' ? 'view_only' : 'administrator' })}>{admin.access_level === 'administrator' ? 'Make View Only' : 'Make Full Access'}</button>
+                            <button className="danger-button" onClick={() => setPendingAdminAction({ type: 'revoke', admin })}>Revoke</button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+        {showInviteAdmin && (
+          <div className="modal-backdrop" role="presentation">
+            <section className="modal-card administrator-invite-modal" role="dialog" aria-modal="true" aria-labelledby="invite-admin-title">
+              <div className="modal-heading"><div><div className="eyebrow">System Administrator</div><h2 id="invite-admin-title">Invite Administrator</h2></div><button className="icon-button" type="button" onClick={() => setShowInviteAdmin(false)} disabled={inviteAdminSaving} aria-label="Close">×</button></div>
+              <form className="restaurant-form" onSubmit={inviteAdministrator}>
+                <label>Email address<input type="email" value={inviteAdminEmail} onChange={(event) => setInviteAdminEmail(event.target.value)}  autoComplete="email" required /></label>
+                <label>Access Level<select value={inviteAdminAccessLevel} onChange={(event) => setInviteAdminAccessLevel(event.target.value as 'administrator' | 'view_only')}><option value="administrator">Administrator — Full Access</option><option value="view_only">View Only</option></select></label>
+                <div className="administrator-invite-warning"><strong>The invitation will be emailed to this address.</strong><span>The account will remain pending until the invitee creates a password.</span></div>
+                {inviteAdminError && <div className="error-banner">{inviteAdminError}</div>}
+                <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setShowInviteAdmin(false)} disabled={inviteAdminSaving}>Cancel</button><button type="submit" disabled={inviteAdminSaving}>{inviteAdminSaving ? 'Sending...' : 'Send Invitation'}</button></div>
+              </form>
+            </section>
+          </div>
+        )}
+        {inviteAdminConfirmationEmail && (
+          <div className="modal-backdrop" role="presentation">
+            <section className="modal-card administrator-invite-success-modal" role="dialog" aria-modal="true" aria-labelledby="invite-admin-success-title">
+              <div className="modal-heading">
+                <div>
+                  <div className="eyebrow">Invitation Sent</div>
+                  <h2 id="invite-admin-success-title">Invitation email sent</h2>
+                </div>
+                <button
+                  className="icon-button"
+                  type="button"
+                  onClick={() => setInviteAdminConfirmationEmail('')}
+                  aria-label="Close"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="administrator-action-content">
+                <div className="success-banner">The invitation email has been sent successfully.</div>
+                <p>The invitation was sent to <strong>{inviteAdminConfirmationEmail}</strong>.</p>
+                <div className="administrator-action-warning">
+                  <strong>The account is currently pending.</strong>
+                  <span>The invitee must open the invitation email and create a password before the account becomes active.</span>
+                </div>
+              </div>
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  onClick={() => setInviteAdminConfirmationEmail('')}
+                >
+                  Done
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
+        {pendingAdminAction && (
+          <div className="modal-backdrop" role="presentation">
+            <section className="modal-card administrator-action-modal" role="dialog" aria-modal="true" aria-labelledby="admin-action-title">
+              <div className="modal-heading"><div><div className="eyebrow">Access Control</div><h2 id="admin-action-title">{pendingAdminAction.type === 'revoke' ? 'Revoke access?' : pendingAdminAction.type === 'restore' ? 'Restore access?' : pendingAdminAction.type === 'delete' ? 'Delete administrator?' : 'Change access level?'}</h2></div><button className="icon-button" type="button" onClick={() => setPendingAdminAction(null)} disabled={adminActionSaving} aria-label="Close">×</button></div>
+              <div className="administrator-action-content"><p><strong>{pendingAdminAction.admin.email || pendingAdminAction.admin.name || 'This administrator'}</strong></p><div className="administrator-action-warning"><strong>{pendingAdminAction.type === 'revoke' ? 'This administrator will no longer be able to access System Admin.' : pendingAdminAction.type === 'restore' ? 'This administrator will regain their previous access level.' : pendingAdminAction.type === 'delete' ? 'This permanently deletes the revoked administrator account and removes its System Admin access. This cannot be undone.' : 'Access will change to ' + (pendingAdminAction.nextAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only') + '.'}</strong><span>{pendingAdminAction.type === 'delete' ? 'Only a revoked account can be permanently deleted. Audit history is retained.' : 'The Owner account cannot be changed or revoked.'}</span></div>{administratorsError && <div className="error-banner">{administratorsError}</div>}</div>
+              <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setPendingAdminAction(null)} disabled={adminActionSaving}>Cancel</button><button type="button" className={pendingAdminAction.type === 'revoke' || pendingAdminAction.type === 'delete' ? 'danger-button' : ''} onClick={() => void confirmAdministratorAction()} disabled={adminActionSaving}>{adminActionSaving ? 'Saving...' : pendingAdminAction.type === 'delete' ? 'Delete permanently' : 'Confirm'}</button></div>
+            </section>
+          </div>
+        )}
+      </main>
+    );
+  }
+
+  if (isAdminPage(adminPage, 'audit')) {
+    return (
+
+      <main className="admin-shell">
+        <header className="admin-header">
+          <div className="brand-block">
+            <img className="company-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
+            <div>
+              <div className="eyebrow">WEB2TABLE Platform</div>
+              <h1>System Admin</h1>
+            </div>
+          </div>
+          <div className="admin-header-actions">
+            <button className={isAdminPage(adminPage, 'dashboard') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openDashboard()} title="Dashboard" aria-label="Dashboard">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+            </button>
+            <button className={isAdminPage(adminPage, 'restaurants') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openRestaurants()} title="Restaurants" aria-label="Restaurants">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V20h11V9.5M9.5 20v-6h5v6"/></svg>
+            </button>
+            <button className={isAdminPage(adminPage, 'audit') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openAuditLogs()} title="Audit Logs" aria-label="Audit Logs">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2h9A2.5 2.5 0 0 1 19 4.5v15a2.5 2.5 0 0 1-2.5 2h-9A2.5 2.5 0 0 1 5 19.5v-15Z"/><path d="M8.5 7.5h7M8.5 11.5h7M8.5 15.5h4"/></svg>
+            </button>
+            <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
+            </button>
+          </div>
+        </header>
+
+        {accountMenuOpen && (
+          <div className="account-menu">
+            <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
+            {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
+            <button className="account-menu-item" onClick={signOut}>Sign out</button>
+          </div>
+        )}
+
+        <section className="dashboard-card audit-page-card">
+          <div className="section-heading">
+            <div>
+              <div className="eyebrow">Accountability</div>
+              <h2>Audit Logs</h2>
+              <p>Review System Administrator sign-ins and administrative changes across the platform.</p>
+            </div>
+          </div>
+
+          <div className="audit-summary-row">
+            <div className="stat-card"><span>Total records</span><strong>{auditLogs.length}</strong></div>
+            <div className="stat-card"><span>Administrative actions</span><strong>{auditLogs.filter((log) => log.event_type === 'ADMIN_ACTION').length}</strong></div>
+            <div className="stat-card"><span>Authentication events</span><strong>{auditLogs.filter((log) => log.event_type !== 'ADMIN_ACTION').length}</strong></div>
+          </div>
+
+          <div className="audit-toolbar">
+            <input
+              className="search-input"
+              type="search"
+              placeholder="Search administrator, restaurant, action..."
+              value={auditSearch}
+              onChange={(event) => setAuditSearch(event.target.value)}
+            />
+            <select value={auditEventFilter} onChange={(event) => setAuditEventFilter(event.target.value)}>
+              <option value="ALL">All events</option>
+              <option value="ADMIN_ACTION">Administrative actions</option>
+              <option value="LOGIN_SUCCESS">Login success</option>
+              <option value="LOGOUT">Logout</option>
+              <option value="ACCESS_DENIED">Access denied</option>
+            </select>
+            <select value={auditDatePreset} onChange={(event) => setAuditDatePreset(event.target.value as typeof auditDatePreset)}>
+              <option value="ALL">All dates</option>
+              <option value="TODAY">Today</option>
+              <option value="7_DAYS">Last 7 days</option>
+              <option value="30_DAYS">Last 30 days</option>
+              <option value="CUSTOM">Custom range</option>
+            </select>
+            {auditDatePreset === 'CUSTOM' && (
+              <>
+                <input type="date" value={auditStartDate} onChange={(event) => setAuditStartDate(event.target.value)} aria-label="Audit start date" />
+                <input type="date" value={auditEndDate} onChange={(event) => setAuditEndDate(event.target.value)} aria-label="Audit end date" />
+              </>
+            )}
+             <button className="secondary-button audit-export-button" type="button" onClick={exportAuditLogs} disabled={filteredAuditLogs.length === 0}>Export CSV</button>
+          </div>
+
+          {auditError && <div className="error-banner">{auditError}</div>}
+
+          {auditLoading ? (
+            <div className="empty-state">Loading audit logs...</div>
+          ) : filteredAuditLogs.length === 0 ? (
+            <div className="empty-state">
+              <strong>No audit records found</strong>
+              <span>Try a different search or filter.</span>
+            </div>
+          ) : (
+            <div className="audit-table-wrap">
+              <table className="audit-table">
+                <thead>
+                  <tr>
+                    <th>Date &amp; Time</th>
+                    <th>Administrator</th>
+                    <th>Restaurant</th>
+                    <th>Event</th>
+                    <th>Action</th>
+                    <th>Changes / Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAuditLogs.map((log) => {
+                    const changes = (log.details?.changes ?? null) as Record<string, unknown> | null;
+                    const createdValues = (log.details?.created_values ?? null) as Record<string, unknown> | null;
+
+                    return (
+                      <tr key={log.id}>
+                        <td className="audit-date">{new Date(log.created_at).toLocaleString()}</td>
+                        <td>
+                          <strong>{log.admin_name || log.admin_email || 'Unknown administrator'}</strong>
+                          {log.admin_name && log.admin_email && <span className="audit-subtext">{log.admin_email}</span>}
+                        </td>
+                        <td>{log.restaurant_name || '—'}</td>
+                        <td><span className={log.event_type === 'ADMIN_ACTION' ? 'audit-event admin' : 'audit-event'}>{log.event_type}</span></td>
+                        <td>{log.action}</td>
+                        <td>
+                          {changes && Object.keys(changes).length > 0 ? (
+                            <div className="audit-change-list">
+                              {Object.entries(changes).map(([field, value]) => {
+                                const pair = Array.isArray(value) ? value : [];
+                                return (
+                                  <div className="audit-change" key={field}>
+                                    <strong>{field.replaceAll('_', ' ')}</strong>
+                                    <span>{String(pair[0] ?? '—')} → {String(pair[1] ?? '—')}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : createdValues ? (
+                            <div className="audit-change-list">
+                              <div className="audit-change"><strong>Created with</strong><span>{String(createdValues.name ?? 'restaurant')}</span></div>
+                            </div>
+                          ) : (
+                            <span className="audit-subtext">{String(log.details?.source ?? '—')}</span>
+                          )}
+                        </td>
+                         <td>
+                           <button className="secondary-button audit-view-button" type="button" onClick={() => openAuditLog(log)}>View</button>
+                         </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="audit-pagination">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => void loadAuditLogs(Math.max(0, auditPageNumber - 1))}
+              disabled={auditLoading || auditPageNumber === 0}
+            >
+              Previous
+            </button>
+            <span>Page {auditPageNumber + 1}</span>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => void loadAuditLogs(auditPageNumber + 1)}
+              disabled={auditLoading || !auditHasMore}
+            >
+              Next
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+
+  {selectedAuditLog && (
+    <div className="modal-backdrop audit-detail-backdrop" role="presentation">
+      <section className="modal-card audit-detail-modal" role="dialog" aria-modal="true" aria-labelledby="audit-detail-title">
+        <div className="modal-heading">
+          <div><div className="eyebrow">Audit Event</div><h2 id="audit-detail-title">Event details</h2></div>
+          <button className="icon-button" type="button" onClick={() => { if (new URLSearchParams(window.location.search).get('auditId')) window.history.back(); else setSelectedAuditLog(null); }} aria-label="Close">×</button>
+        </div>
+        <div className="audit-detail-grid">
+          <div><span>Date &amp; Time</span><strong>{new Date(selectedAuditLog.created_at).toLocaleString()}</strong></div>
+          <div><span>Administrator</span><strong>{selectedAuditLog.admin_name || selectedAuditLog.admin_email || 'Unknown administrator'}</strong></div>
+          <div><span>Restaurant</span><strong>{selectedAuditLog.restaurant_name || '—'}</strong></div>
+          <div><span>Event</span><strong>{selectedAuditLog.event_type}</strong></div>
+          <div><span>Action</span><strong>{selectedAuditLog.action}</strong></div>
+          <div><span>Entity</span><strong>{selectedAuditLog.entity_type || '—'}</strong></div>
+        </div>
+        <div className="audit-json-panel"><div className="eyebrow">Recorded details</div><pre>{JSON.stringify(selectedAuditLog.details ?? {}, null, 2)}</pre></div>
+        <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => { if (new URLSearchParams(window.location.search).get('auditId')) window.history.back(); else setSelectedAuditLog(null); }}>Close</button></div>
+      </section>
+    </div>
+  )}
+
+  function openRestaurant(restaurant: Restaurant, pushHistory = true) {
+    if (pushHistory) pushNavigation('restaurant', { restaurantId: restaurant.id });
+    setSelectedRestaurant(restaurant);
+    setAdminPage('restaurants');
+    setManageTab('overview');
+    setOwnerEmail('');
+    setOwnerName('');
+    setOwnerUserId('');
+    setOwnerError('');
+    setDomain('');
+    setDomainError('');
+    setSettingsError('');
+    setRestaurantError('');
+  }
+
+  function closeRestaurant(pushHistory = true) {
+    if (pushHistory) pushNavigation('restaurants');
+    setSelectedRestaurant(null);
+  }
+
+  function startCreate() {
+    setEditingRestaurant(null);
+    setForm(emptyForm);
+    setRestaurantError('');
+    setShowForm(true);
+  }
+
+  function startEdit(restaurant: Restaurant) {
+    setEditingRestaurant(restaurant);
+    setForm({
+      name: restaurant.name,
+      slug: restaurant.slug,
+      tagline: restaurant.tagline,
+      logo_url: restaurant.logo_url ?? '',
+      location_text: restaurant.location_text ?? '',
+      contact_number: restaurant.contact_number ?? '',
+      email: restaurant.email ?? '',
+      is_active: restaurant.is_active,
+    });
+    setRestaurantError('');
+    setShowForm(true);
+  }
+
+  function closeForm() {
+    if (saving) return;
+    setShowForm(false);
+    setEditingRestaurant(null);
+    setForm(emptyForm);
+  }
+
+  function updateForm(field: keyof RestaurantForm, value: string | boolean) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function saveRestaurant(event: FormEvent) {
+    event.preventDefault();
+    setPendingRestaurantFormSave(true);
+  }
+
+  async function confirmSaveRestaurant() {
+    setPendingRestaurantFormSave(false);
+    setSaving(true);
+    setRestaurantError('');
+
+    const payload = {
+      name: form.name.trim(),
+      slug: form.slug.trim().toLowerCase(),
+      tagline: form.tagline.trim(),
+      logo_url: form.logo_url.trim() || null,
+      location_text: form.location_text.trim() || null,
+      contact_number: form.contact_number.trim() || null,
+      email: form.email.trim() || null,
+      is_active: form.is_active,
+    };
+
+    const result = editingRestaurant
+      ? await supabase.from('restaurants').update(payload).eq('id', editingRestaurant.id)
+      : await supabase.from('restaurants').insert(payload).select('id').single();
+
+    if (result.error) {
+      setRestaurantError(result.error.message);
+      setSaving(false);
+      return;
+    }
+
+    const restaurantId = editingRestaurant?.id ?? (result.data as { id: string } | null)?.id ?? null;
+
+    const restaurantChanges = editingRestaurant
+      ? Object.fromEntries(
+          Object.entries({
+            name: [editingRestaurant.name, payload.name],
+            slug: [editingRestaurant.slug, payload.slug],
+            tagline: [editingRestaurant.tagline, payload.tagline],
+            logo_url: [editingRestaurant.logo_url, payload.logo_url],
+            location_text: [editingRestaurant.location_text, payload.location_text],
+            contact_number: [editingRestaurant.contact_number, payload.contact_number],
+            email: [editingRestaurant.email, payload.email],
+            is_active: [editingRestaurant.is_active, payload.is_active],
+          }).filter(([, [oldValue, newValue]]) => oldValue !== newValue),
+        )
+      : {};
+
+    await recordAdminAudit(
+      editingRestaurant ? 'Restaurant profile updated' : 'Restaurant created',
+      restaurantId,
+      'restaurant',
+      restaurantId,
+      editingRestaurant
+        ? {
+            changes: restaurantChanges,
+          }
+        : {
+            created_values: {
+              name: payload.name,
+              slug: payload.slug,
+              tagline: payload.tagline,
+              logo_url: payload.logo_url,
+              location_text: payload.location_text,
+              contact_number: payload.contact_number,
+              email: payload.email,
+              is_active: payload.is_active,
+            },
+          },
+    );
+
+    setSaving(false);
+    closeForm();
+    await loadRestaurants();
+  }
+
+  async function toggleRestaurant(restaurant: Restaurant) {
+    const nextStatus = !restaurant.is_active;
+    setRestaurantError('');
+
+    const { error } = await supabase
+      .from('restaurants')
+      .update({ is_active: nextStatus })
+      .eq('id', restaurant.id);
+
+    if (error) {
+      setRestaurantError(error.message);
+      return;
+    }
+
+    await recordAdminAudit(
+      nextStatus ? 'Restaurant activated' : 'Restaurant deactivated',
+      restaurant.id,
+      'restaurant',
+      restaurant.id,
+      {
+        name: restaurant.name,
+        previous_status: restaurant.is_active ? 'active' : 'inactive',
+        new_status: nextStatus ? 'active' : 'inactive',
+      },
+    );
+
+    await loadRestaurants();
   }
 
   if (selectedRestaurant) {
