@@ -56,7 +56,7 @@ function App() {
     granted_by_email: string | null; created_at: string; updated_at: string;
   }>>([]);
   const [pendingAdminAction, setPendingAdminAction] = useState<{
-    type: 'revoke' | 'restore' | 'change';
+    type: 'revoke' | 'restore' | 'change' | 'delete';
     admin: typeof administrators[number];
     nextAccessLevel?: 'administrator' | 'view_only';
   } | null>(null);
@@ -286,6 +286,9 @@ function App() {
       error = result.error;
     } else if (type === 'restore') {
       const result = await supabase.rpc('system_admin_restore_access', { p_admin_user_id: admin.admin_user_id });
+      error = result.error;
+    } else if (type === 'delete') {
+      const result = await supabase.rpc('system_admin_delete_revoked_access', { p_admin_user_id: admin.admin_user_id });
       error = result.error;
     } else if (nextAccessLevel) {
       const result = await supabase.rpc('system_admin_set_access_level', {
@@ -885,7 +888,10 @@ function App() {
                       <td>{admin.granted_by_email || '—'}</td>
                       <td>
                         {admin.access_level === 'owner' ? <span className="audit-subtext">Owner account</span> : admin.status === 'revoked' ? (
-                          <button className="secondary-button" onClick={() => setPendingAdminAction({ type: 'restore', admin })}>Restore</button>
+                          <div className="staff-actions">
+                            <button className="secondary-button" onClick={() => setPendingAdminAction({ type: 'restore', admin })}>Restore</button>
+                            <button className="danger-button" onClick={() => setPendingAdminAction({ type: 'delete', admin })}>Delete</button>
+                          </div>
                         ) : (
                           <div className="staff-actions">
                             <button className="secondary-button" onClick={() => setPendingAdminAction({ type: 'change', admin, nextAccessLevel: admin.access_level === 'administrator' ? 'view_only' : 'administrator' })}>{admin.access_level === 'administrator' ? 'Make View Only' : 'Make Full Access'}</button>
@@ -953,9 +959,9 @@ function App() {
         {pendingAdminAction && (
           <div className="modal-backdrop" role="presentation">
             <section className="modal-card administrator-action-modal" role="dialog" aria-modal="true" aria-labelledby="admin-action-title">
-              <div className="modal-heading"><div><div className="eyebrow">Access Control</div><h2 id="admin-action-title">{pendingAdminAction.type === 'revoke' ? 'Revoke access?' : pendingAdminAction.type === 'restore' ? 'Restore access?' : 'Change access level?'}</h2></div><button className="icon-button" type="button" onClick={() => setPendingAdminAction(null)} disabled={adminActionSaving} aria-label="Close">×</button></div>
-              <div className="administrator-action-content"><p><strong>{pendingAdminAction.admin.email || pendingAdminAction.admin.name || 'This administrator'}</strong></p><div className="administrator-action-warning"><strong>{pendingAdminAction.type === 'revoke' ? 'This administrator will no longer be able to access System Admin.' : pendingAdminAction.type === 'restore' ? 'This administrator will regain their previous access level.' : 'Access will change to ' + (pendingAdminAction.nextAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only') + '.'}</strong><span>The Owner account cannot be changed or revoked.</span></div>{administratorsError && <div className="error-banner">{administratorsError}</div>}</div>
-              <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setPendingAdminAction(null)} disabled={adminActionSaving}>Cancel</button><button type="button" className={pendingAdminAction.type === 'revoke' ? 'danger-button' : ''} onClick={() => void confirmAdministratorAction()} disabled={adminActionSaving}>{adminActionSaving ? 'Saving...' : 'Confirm'}</button></div>
+              <div className="modal-heading"><div><div className="eyebrow">Access Control</div><h2 id="admin-action-title">{pendingAdminAction.type === 'revoke' ? 'Revoke access?' : pendingAdminAction.type === 'restore' ? 'Restore access?' : pendingAdminAction.type === 'delete' ? 'Delete administrator?' : 'Change access level?'}</h2></div><button className="icon-button" type="button" onClick={() => setPendingAdminAction(null)} disabled={adminActionSaving} aria-label="Close">×</button></div>
+              <div className="administrator-action-content"><p><strong>{pendingAdminAction.admin.email || pendingAdminAction.admin.name || 'This administrator'}</strong></p><div className="administrator-action-warning"><strong>{pendingAdminAction.type === 'revoke' ? 'This administrator will no longer be able to access System Admin.' : pendingAdminAction.type === 'restore' ? 'This administrator will regain their previous access level.' : pendingAdminAction.type === 'delete' ? 'This permanently deletes the revoked administrator account and removes its System Admin access. This cannot be undone.' : 'Access will change to ' + (pendingAdminAction.nextAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only') + '.'}</strong><span>{pendingAdminAction.type === 'delete' ? 'Only a revoked account can be permanently deleted. Audit history is retained.' : 'The Owner account cannot be changed or revoked.'}</span></div>{administratorsError && <div className="error-banner">{administratorsError}</div>}</div>
+              <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setPendingAdminAction(null)} disabled={adminActionSaving}>Cancel</button><button type="button" className={pendingAdminAction.type === 'revoke' || pendingAdminAction.type === 'delete' ? 'danger-button' : ''} onClick={() => void confirmAdministratorAction()} disabled={adminActionSaving}>{adminActionSaving ? 'Saving...' : pendingAdminAction.type === 'delete' ? 'Delete permanently' : 'Confirm'}</button></div>
             </section>
           </div>
         )}
