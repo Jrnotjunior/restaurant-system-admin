@@ -133,6 +133,7 @@ function App() {
   }>>([]);
   const [auditSearch, setAuditSearch] = useState('');
   const [auditEventFilter, setAuditEventFilter] = useState('ALL');
+  const [selectedAuditLog, setSelectedAuditLog] = useState<typeof auditLogs[number] | null>(null);
 
   async function recordAuthAuditEvent(
     eventType: 'LOGIN_SUCCESS' | 'LOGOUT',
@@ -999,6 +1000,9 @@ function App() {
                             <span className="audit-subtext">{String(log.details?.source ?? '—')}</span>
                           )}
                         </td>
+                         <td>
+                           <button className="secondary-button audit-view-button" type="button" onClick={() => setSelectedAuditLog(log)}>View</button>
+                         </td>
                       </tr>
                     );
                   })}
@@ -1011,6 +1015,27 @@ function App() {
     );
   }
 
+
+  {selectedAuditLog && (
+    <div className="modal-backdrop audit-detail-backdrop" role="presentation">
+      <section className="modal-card audit-detail-modal" role="dialog" aria-modal="true" aria-labelledby="audit-detail-title">
+        <div className="modal-heading">
+          <div><div className="eyebrow">Audit Event</div><h2 id="audit-detail-title">Event details</h2></div>
+          <button className="icon-button" type="button" onClick={() => setSelectedAuditLog(null)} aria-label="Close">×</button>
+        </div>
+        <div className="audit-detail-grid">
+          <div><span>Date &amp; Time</span><strong>{new Date(selectedAuditLog.created_at).toLocaleString()}</strong></div>
+          <div><span>Administrator</span><strong>{selectedAuditLog.admin_name || selectedAuditLog.admin_email || 'Unknown administrator'}</strong></div>
+          <div><span>Restaurant</span><strong>{selectedAuditLog.restaurant_name || '—'}</strong></div>
+          <div><span>Event</span><strong>{selectedAuditLog.event_type}</strong></div>
+          <div><span>Action</span><strong>{selectedAuditLog.action}</strong></div>
+          <div><span>Entity</span><strong>{selectedAuditLog.entity_type || '—'}</strong></div>
+        </div>
+        <div className="audit-json-panel"><div className="eyebrow">Recorded details</div><pre>{JSON.stringify(selectedAuditLog.details ?? {}, null, 2)}</pre></div>
+        <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setSelectedAuditLog(null)}>Close</button></div>
+      </section>
+    </div>
+  )}
 
   function openRestaurant(restaurant: Restaurant) {
     setSelectedRestaurant(restaurant);
