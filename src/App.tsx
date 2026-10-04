@@ -45,6 +45,28 @@ function App() {
   const [signedIn, setSignedIn] = useState(false);
   const [authorized, setAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [adminAccessLevel, setAdminAccessLevel] = useState<'owner' | 'administrator' | 'view_only' | null>(null);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [administratorsLoading, setAdministratorsLoading] = useState(false);
+  const [administratorsError, setAdministratorsError] = useState('');
+  const [administrators, setAdministrators] = useState<Array<{
+    id: string; admin_user_id: string; email: string | null; name: string | null;
+    access_level: 'owner' | 'administrator' | 'view_only'; is_active: boolean;
+    status: 'pending' | 'active' | 'revoked'; granted_by: string | null;
+    granted_by_email: string | null; created_at: string; updated_at: string;
+  }>>([]);
+  const [pendingAdminAction, setPendingAdminAction] = useState<{
+    type: 'revoke' | 'restore' | 'change';
+    admin: typeof administrators[number];
+    nextAccessLevel?: 'administrator' | 'view_only';
+  } | null>(null);
+  const [adminActionSaving, setAdminActionSaving] = useState(false);
+  const [showInviteAdmin, setShowInviteAdmin] = useState(false);
+  const [inviteAdminEmail, setInviteAdminEmail] = useState('');
+  const [inviteAdminAccessLevel, setInviteAdminAccessLevel] = useState<'administrator' | 'view_only'>('administrator');
+  const [inviteAdminSaving, setInviteAdminSaving] = useState(false);
+  const [inviteAdminError, setInviteAdminError] = useState('');
+  const [inviteAdminSuccess, setInviteAdminSuccess] = useState('');
   const [inviteSetup, setInviteSetup] = useState(false);
   const [invitePassword, setInvitePassword] = useState('');
   const [invitePasswordConfirm, setInvitePasswordConfirm] = useState('');
@@ -91,7 +113,7 @@ function App() {
   const [pendingRemoveOwner, setPendingRemoveOwner] = useState(false);
   const [pendingRestaurantStatus, setPendingRestaurantStatus] = useState<Restaurant | null>(null);
   const [pendingRestaurantFormSave, setPendingRestaurantFormSave] = useState(false);
-  const [adminPage, setAdminPage] = useState<'restaurants' | 'audit'>('restaurants');
+  const [adminPage, setAdminPage] = useState<'restaurants' | 'audit' | 'administrators'>('restaurants');
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState('');
   const [auditLogs, setAuditLogs] = useState<Array<{
@@ -154,6 +176,106 @@ function App() {
     return queryParams.get('type') === 'invite' || hashParams.get('type') === 'invite';
   }
 
+  async function loadMyAccessLevel() {
+    const { data, error } = await supabase.rpc('system_admin_get_my_access_level');
+    if (error) {
+      setAdminAccessLevel(null);
+      return null;
+    }
+    const access = Array.isArray(data) ? data[0] : data;
+    const level = access?.access_level as 'owner' | 'administrator' | 'view_only' | undefined;
+    setAdminAccessLevel(level ?? null);
+    return level ?? null;
+  }
+
+  async function loadAdministrators() {
+    setAdministratorsLoading(true);
+    setAdministratorsError('');
+    const { data, error } = await supabase.rpc('system_admin_get_administrators');
+    if (error) {
+      setAdministratorsError(error.message);
+      setAdministrators([]);
+    } else {
+      setAdministrators((Array.isArray(data) ? data : []) as typeof administrators);
+    }
+    setAdministratorsLoading(false);
+  }
+
+  function openAdministrators() {
+    if (adminAccessLevel !== 'owner') return;
+    setAccountMenuOpen(false);
+    setAdminPage('administrators');
+    setSelectedRestaurant(null);
+    setInviteAdminError('');
+    setInviteAdminSuccess('');
+    void loadAdministrators();
+  }
+
+  async function inviteAdministrator(event: FormEvent) {
+    event.preventDefault();
+    setInviteAdminSaving(true);
+    setInviteAdminError('');
+    setInviteAdminSuccess('');
+
+    const { data, error } = await supabase.functions.invoke('web2table-invite-user', {
+      body: {
+        invitation_type: 'system_admin',
+        email: inviteAdminEmail.trim(),
+        access_level: inviteAdminAccessLevel,
+      },
+    });
+
+    if (error) {
+      setInviteAdminError(error.message);
+      setInviteAdminSaving(false);
+      return;
+    }
+    if (data?.error) {
+      setInviteAdminError(String(data.error));
+      setInviteAdminSaving(false);
+      return;
+    }
+
+    setInviteAdminSuccess(`Invitation sent to ${inviteAdminEmail.trim()}.`);
+    setInviteAdminEmail('');
+    setInviteAdminAccessLevel('administrator');
+    setInviteAdminSaving(false);
+    await loadAdministrators();
+  }
+
+  async function confirmAdministratorAction() {
+    if (!pendingAdminAction) return;
+    setAdminActionSaving(true);
+    setAdministratorsError('');
+
+    const { type, admin, nextAccessLevel } = pendingAdminAction;
+    let error: { message: string } | null = null;
+
+    if (type === 'revoke') {
+      const result = await supabase.rpc('system_admin_revoke_access', { p_admin_user_id: admin.admin_user_id });
+      error = result.error;
+    } else if (type === 'restore') {
+      const result = await supabase.rpc('system_admin_restore_access', { p_admin_user_id: admin.admin_user_id });
+      error = result.error;
+    } else if (nextAccessLevel) {
+      const result = await supabase.rpc('system_admin_set_access_level', {
+        p_admin_user_id: admin.admin_user_id,
+        p_access_level: nextAccessLevel,
+      });
+      error = result.error;
+    }
+
+    if (error) {
+      setAdministratorsError(error.message);
+      setAdminActionSaving(false);
+      return;
+    }
+
+    setPendingAdminAction(null);
+    setAdminActionSaving(false);
+    await loadAdministrators();
+  }
+
   async function checkAdminSession() {
     const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData.session;
@@ -185,6 +307,7 @@ function App() {
       return false;
     }
 
+    await loadMyAccessLevel();
     setAuthorized(true);
     setInviteSetup(false);
     setLoading(false);
@@ -251,6 +374,8 @@ function App() {
       if (!session) {
         setSignedIn(false);
         setAuthorized(false);
+        setAdminAccessLevel(null);
+        setAccountMenuOpen(false);
         setRestaurants([]);
         return;
       }
@@ -297,10 +422,12 @@ function App() {
       { source: 'system_admin_web_app' },
     );
 
+    await loadMyAccessLevel();
     setAuthorized(true);
   }
 
   async function signOut() {
+    setAccountMenuOpen(false);
     await recordAuthAuditEvent(
       'LOGOUT',
       'System Administrator signed out',
@@ -672,6 +799,95 @@ function App() {
     );
   }, [restaurants, search]);
 
+  if (adminPage === 'administrators') {
+    return (
+      <main className="admin-shell">
+        <header className="admin-header">
+          <div className="brand-block">
+            <img className="company-logo" src="/web2table-system-admin/web2table.png" alt="WEB2TABLE" />
+            <div><div className="eyebrow">Account</div><h1>System Administrators</h1></div>
+          </div>
+          <div className="admin-header-actions">
+            <button className="admin-icon-button" onClick={() => setAdminPage('restaurants')} title="Restaurants" aria-label="Restaurants">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6.5 9.5V20h11V9.5M9.5 20v-6h5v6"/></svg>
+            </button>
+            <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
+            </button>
+          </div>
+        </header>
+        {accountMenuOpen && (
+          <div className="account-menu">
+            <div className="account-menu-header"><span>System Administrator</span><strong>Owner</strong></div>
+            <button className="account-menu-item" onClick={() => setAccountMenuOpen(false)}>System Administrators</button>
+            <button className="account-menu-item" onClick={signOut}>Sign out</button>
+          </div>
+        )}
+        <button className="back-button" onClick={() => setAdminPage('restaurants')}>← Back to restaurants</button>
+        <section className="dashboard-card administrators-card">
+          <div className="section-heading">
+            <div><div className="eyebrow">Access Control</div><h2>System Administrators</h2><p>Manage who can access the WEB2TABLE System Admin platform.</p></div>
+            <button onClick={() => { setInviteAdminError(''); setInviteAdminSuccess(''); setShowInviteAdmin(true); }}>+ Invite Administrator</button>
+          </div>
+          {administratorsError && <div className="error-banner">{administratorsError}</div>}
+          {inviteAdminSuccess && <div className="success-banner">{inviteAdminSuccess}</div>}
+          {administratorsLoading ? <div className="empty-state">Loading administrators...</div> : administrators.length === 0 ? (
+            <div className="empty-state"><strong>No administrators found</strong><span>Invite an administrator to get started.</span></div>
+          ) : (
+            <div className="administrators-table-wrap">
+              <table className="administrators-table">
+                <thead><tr><th>Administrator</th><th>Access</th><th>Status</th><th>Granted by</th><th>Actions</th></tr></thead>
+                <tbody>
+                  {administrators.map((admin) => (
+                    <tr key={admin.id}>
+                      <td><strong>{admin.name || admin.email || 'Unnamed administrator'}</strong>{admin.name && admin.email && <span className="audit-subtext">{admin.email}</span>}</td>
+                      <td><span className="access-badge">{admin.access_level === 'owner' ? 'Owner' : admin.access_level === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</span></td>
+                      <td><span className={admin.status === 'active' ? 'status active' : 'status inactive'}>{admin.status === 'pending' ? 'Pending invite' : admin.status === 'revoked' ? 'Revoked' : 'Active'}</span></td>
+                      <td>{admin.granted_by_email || '—'}</td>
+                      <td>
+                        {admin.access_level === 'owner' ? <span className="audit-subtext">Owner account</span> : admin.status === 'revoked' ? (
+                          <button className="secondary-button" onClick={() => setPendingAdminAction({ type: 'restore', admin })}>Restore</button>
+                        ) : (
+                          <div className="staff-actions">
+                            <button className="secondary-button" onClick={() => setPendingAdminAction({ type: 'change', admin, nextAccessLevel: admin.access_level === 'administrator' ? 'view_only' : 'administrator' })}>{admin.access_level === 'administrator' ? 'Make View Only' : 'Make Full Access'}</button>
+                            <button className="danger-button" onClick={() => setPendingAdminAction({ type: 'revoke', admin })}>Revoke</button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+        {showInviteAdmin && (
+          <div className="modal-backdrop" role="presentation">
+            <section className="modal-card administrator-invite-modal" role="dialog" aria-modal="true" aria-labelledby="invite-admin-title">
+              <div className="modal-heading"><div><div className="eyebrow">System Administrator</div><h2 id="invite-admin-title">Invite Administrator</h2></div><button className="icon-button" type="button" onClick={() => setShowInviteAdmin(false)} disabled={inviteAdminSaving} aria-label="Close">×</button></div>
+              <form className="restaurant-form" onSubmit={inviteAdministrator}>
+                <label>Email address<input type="email" value={inviteAdminEmail} onChange={(event) => setInviteAdminEmail(event.target.value)} placeholder="administrator@example.com" autoComplete="email" required /></label>
+                <label>Access Level<select value={inviteAdminAccessLevel} onChange={(event) => setInviteAdminAccessLevel(event.target.value as 'administrator' | 'view_only')}><option value="administrator">Administrator — Full Access</option><option value="view_only">View Only</option></select></label>
+                <div className="administrator-invite-warning"><strong>The invitation will be emailed to this address.</strong><span>The account will remain pending until the invitee creates a password.</span></div>
+                {inviteAdminError && <div className="error-banner">{inviteAdminError}</div>}
+                <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setShowInviteAdmin(false)} disabled={inviteAdminSaving}>Cancel</button><button type="submit" disabled={inviteAdminSaving}>{inviteAdminSaving ? 'Sending...' : 'Send Invitation'}</button></div>
+              </form>
+            </section>
+          </div>
+        )}
+        {pendingAdminAction && (
+          <div className="modal-backdrop" role="presentation">
+            <section className="modal-card administrator-action-modal" role="dialog" aria-modal="true" aria-labelledby="admin-action-title">
+              <div className="modal-heading"><div><div className="eyebrow">Access Control</div><h2 id="admin-action-title">{pendingAdminAction.type === 'revoke' ? 'Revoke access?' : pendingAdminAction.type === 'restore' ? 'Restore access?' : 'Change access level?'}</h2></div><button className="icon-button" type="button" onClick={() => setPendingAdminAction(null)} disabled={adminActionSaving} aria-label="Close">×</button></div>
+              <div className="administrator-action-content"><p><strong>{pendingAdminAction.admin.email || pendingAdminAction.admin.name || 'This administrator'}</strong></p><div className="administrator-action-warning"><strong>{pendingAdminAction.type === 'revoke' ? 'This administrator will no longer be able to access System Admin.' : pendingAdminAction.type === 'restore' ? 'This administrator will regain their previous access level.' : 'Access will change to ' + (pendingAdminAction.nextAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only') + '.'}</strong><span>The Owner account cannot be changed or revoked.</span></div>{administratorsError && <div className="error-banner">{administratorsError}</div>}</div>
+              <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setPendingAdminAction(null)} disabled={adminActionSaving}>Cancel</button><button type="button" className={pendingAdminAction.type === 'revoke' ? 'danger-button' : ''} onClick={() => void confirmAdministratorAction()} disabled={adminActionSaving}>{adminActionSaving ? 'Saving...' : 'Confirm'}</button></div>
+            </section>
+          </div>
+        )}
+      </main>
+    );
+  }
+
   if (adminPage === 'audit') {
     return (
 
@@ -685,9 +901,17 @@ function App() {
             </div>
           </div>
           <div className="admin-header-actions">
-            <button className="admin-icon-button" onClick={signOut} title="Account" aria-label="Account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg></button>
+            <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg></button>
           </div>
         </header>
+
+        {accountMenuOpen && (
+          <div className="account-menu">
+            <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
+            {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={openAdministrators}>System Administrators</button>}
+            <button className="account-menu-item" onClick={signOut}>Sign out</button>
+          </div>
+        )}
 
         <section className="dashboard-card audit-page-card">
           <div className="section-heading">
@@ -1044,6 +1268,14 @@ function App() {
             <button className="secondary-button" onClick={signOut}>Sign out</button>
           </div>
         </header>
+
+        {accountMenuOpen && (
+          <div className="account-menu">
+            <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
+            {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={openAdministrators}>System Administrators</button>}
+            <button className="account-menu-item" onClick={signOut}>Sign out</button>
+          </div>
+        )}
 
         <button className="back-button" onClick={closeRestaurant}>← Back to restaurants</button>
 
@@ -1575,6 +1807,14 @@ function App() {
           <button className="admin-icon-button" onClick={signOut} title="Account" aria-label="Account"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg></button>
         </div>
       </header>
+
+        {accountMenuOpen && (
+          <div className="account-menu">
+            <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
+            {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={openAdministrators}>System Administrators</button>}
+            <button className="account-menu-item" onClick={signOut}>Sign out</button>
+          </div>
+        )}
 
       <section className="dashboard-card">
         <div className="section-heading">
