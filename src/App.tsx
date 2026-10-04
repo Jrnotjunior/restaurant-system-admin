@@ -390,10 +390,12 @@ function App() {
 
   async function signIn(event: FormEvent) {
     event.preventDefault();
+    setLoading(true);
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
+      setLoading(false);
       window.alert(error.message);
       return;
     }
@@ -404,6 +406,7 @@ function App() {
       await supabase.auth.signOut();
       setSignedIn(false);
       setAuthorized(false);
+      setLoading(false);
       window.alert('This account does not have active System Administrator access.');
       return;
     }
@@ -415,6 +418,7 @@ function App() {
     );
 
     setAuthorized(true);
+    setLoading(false);
   }
 
   async function signOut() {
