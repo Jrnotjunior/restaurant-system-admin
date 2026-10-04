@@ -47,6 +47,7 @@ const emptyForm: RestaurantForm = {
 
 function App() {
   const supabaseProjectHost = import.meta.env.VITE_SUPABASE_URL ? new URL(import.meta.env.VITE_SUPABASE_URL).host : 'not configured';
+  const buildMarker = '2026-10-04-DIAGNOSTIC-2';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [signedIn, setSignedIn] = useState(false);
@@ -550,7 +551,7 @@ function App() {
     // Logout must remain available even if audit logging or another
     // client-side state update is delayed. Sign out first, then reload
     // the app so the login screen is guaranteed to render.
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
 
     if (error) {
       console.error('System Administrator sign out failed:', error);
@@ -565,7 +566,7 @@ function App() {
     setSelectedRestaurant(null);
     setAdminPage('dashboard');
 
-    window.location.replace(window.location.pathname);
+    window.location.replace(`${window.location.pathname}?page=dashboard&v=${buildMarker}`);
   }
 
   async function loadRestaurantSettings(restaurantId: string) {
@@ -1149,7 +1150,7 @@ function App() {
             <div className="empty-state">Loading platform overview...</div>
           ) : (
             <>
-              <div className="dashboard-connection-debug">Connected project: {supabaseProjectHost}</div>
+              <div className="dashboard-connection-debug">Build: {buildMarker} · Connected project: {supabaseProjectHost}</div>
               <div className="dashboard-section-label">Restaurant Operations</div>
               <div className="system-stats-grid">
                 <button className="stat-card dashboard-stat-button" type="button" onClick={() => openRestaurants()}>
