@@ -95,7 +95,23 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const canManage = adminAccessLevel === 'owner' || adminAccessLevel === 'administrator';
-  const [manageTab, setManageTab] = useState<'overview' | 'owner' | 'domain' | 'settings' | 'staff'>('overview');
+  const [manageTab, setManageTab] = useState<'overview' | 'owner' | 'domain' | 'settings' | 'staff' | 'package'>('overview');
+  const [restaurantPackageId, setRestaurantPackageId] = useState<number | null>(null);
+  const [restaurantPackageRows, setRestaurantPackageRows] = useState<Array<{
+    package_id: number | null;
+    package_key: string | null;
+    package_name: string | null;
+    package_description: string | null;
+    subscription_status: string;
+    module_key: string;
+    module_name: string;
+    included_by_package: boolean;
+    override_enabled: boolean | null;
+    effective_enabled: boolean;
+  }>>([]);
+  const [packageLoading, setPackageLoading] = useState(false);
+  const [packageSaving, setPackageSaving] = useState(false);
+  const [packageError, setPackageError] = useState('');
   const [staffLoading, setStaffLoading] = useState(false);
   const [staffError, setStaffError] = useState('');
   const [restaurantStaff, setRestaurantStaff] = useState<Array<{ id: string; name: string; mobile_number: string; email: string; role: string; is_active: boolean; auth_user_id: string | null }>>([]);
@@ -589,6 +605,68 @@ function App() {
     );
 
     await supabase.auth.signOut();
+  }
+
+  async function loadRestaurantPackage(restaurantId: string) {
+    setPackageLoading(true);
+    setPackageError('');
+
+    const { data, error } = await supabase.rpc('system_admin_get_restaurant_package', {
+      p_restaurant_id: restaurantId,
+    });
+
+    if (error) {
+      setPackageError(error.message);
+      setRestaurantPackageId(null);
+      setRestaurantPackageRows([]);
+    } else {
+      const rows = (Array.isArray(data) ? data : []) as typeof restaurantPackageRows;
+      setRestaurantPackageRows(rows);
+      setRestaurantPackageId(rows[0]?.package_id ?? null);
+    }
+
+    setPackageLoading(false);
+  }
+
+  async function assignRestaurantPackage(packageId: number) {
+    if (!selectedRestaurant) return;
+
+    setPackageSaving(true);
+    setPackageError('');
+
+    const { error } = await supabase.rpc('system_admin_assign_restaurant_package', {
+      p_restaurant_id: selectedRestaurant.id,
+      p_package_id: packageId,
+    });
+
+    if (error) {
+      setPackageError(error.message);
+    } else {
+      await loadRestaurantPackage(selectedRestaurant.id);
+    }
+
+    setPackageSaving(false);
+  }
+
+  async function setRestaurantModuleEnabled(moduleKey: string, enabled: boolean) {
+    if (!selectedRestaurant) return;
+
+    setPackageSaving(true);
+    setPackageError('');
+
+    const { error } = await supabase.rpc('system_admin_set_restaurant_module_override', {
+      p_restaurant_id: selectedRestaurant.id,
+      p_module_key: moduleKey,
+      p_enabled: enabled,
+    });
+
+    if (error) {
+      setPackageError(error.message);
+    } else {
+      await loadRestaurantPackage(selectedRestaurant.id);
+    }
+
+    setPackageSaving(false);
   }
 
   async function loadRestaurantSettings(restaurantId: string) {
@@ -1760,6 +1838,9 @@ function App() {
     setSelectedRestaurant(restaurant);
     setAdminPage('restaurants');
     setManageTab('overview');
+    setRestaurantPackageId(null);
+    setRestaurantPackageRows([]);
+    setPackageError('');
     setOwnerEmail('');
     setOwnerName('');
     setOwnerUserId('');
@@ -1983,6 +2064,7 @@ function App() {
             <button className={`manage-tab ${manageTab === 'domain' ? 'active' : ''}`} type="button" onClick={() => { setManageTab('domain'); setDomain(selectedRestaurant.custom_domain ?? ''); setDomainError(''); }}>Domain</button>
             <button className={`manage-tab ${manageTab === 'settings' ? 'active' : ''}`} type="button" onClick={() => { setManageTab('settings'); void loadRestaurantSettings(selectedRestaurant.id); }}>Settings</button>
             <button className={`manage-tab ${manageTab === 'staff' ? 'active' : ''}`} type="button" onClick={() => { setManageTab('staff'); void loadRestaurantStaff(selectedRestaurant.id); }}>Staff</button>
+            <button className={`manage-tab ${manageTab === 'package' ? 'active' : ''}`} type="button" onClick={() => { setManageTab('package'); void loadRestaurantPackage(selectedRestaurant.id); }}>Package</button>
           </nav>
 
           {manageTab === 'overview' ? (
@@ -2079,6 +2161,95 @@ function App() {
                   Add a custom domain only when one is available. Enter only the hostname, for example <strong>restaurant.com</strong>. Do not include https:// or a path.
                 </div>
                 {domainError && <div className="error-banner">{domainError}</div>}
+              </div>
+            </div>
+          ) : manageTab === 'package' ? (
+            <div className="manage-overview">
+              <div className="overview-section">
+                <div className="eyebrow">Package & Access</div>
+                <h3>Restaurant package</h3>
+                <p>Choose the package for this restaurant. The package automatically controls the available modules; individual included modules can be disabled when needed.</p>
+
+                {packageLoading ? (
+                  <div className="empty-state">Loading package...</div>
+                ) : (
+                  <>
+                    {packageError && <div className="error-banner">{packageError}</div>}
+
+                    <div className="status-panel">
+                      <div>
+                        <strong>{restaurantPackageRows[0]?.package_name || 'No package assigned'}</strong>
+                        <span>{restaurantPackageRows[0]?.package_description || 'Assign a package to activate restaurant modules.'}</span>
+                      </div>
+                      <span className={restaurantPackageRows[0]?.subscription_status === 'active' ? 'status active' : 'status inactive'}>
+                        {restaurantPackageRows[0]?.subscription_status === 'active' ? 'Active' : 'Not assigned'}
+                      </span>
+                    </div>
+
+                    {canManage && (
+                      <div className="domain-form">
+                        <label>
+                          Package
+                          <select
+                            value={restaurantPackageId ?? ''}
+                            onChange={(event) => {
+                              const nextPackageId = Number(event.target.value);
+                              if (Number.isInteger(nextPackageId) && nextPackageId > 0) {
+                                void assignRestaurantPackage(nextPackageId);
+                              }
+                            }}
+                            disabled={packageSaving}
+                          >
+                            <option value="" disabled>Select a package</option>
+                            <option value="1">Full System</option>
+                            <option value="2">Self Ordering + POS</option>
+                            <option value="3">POS</option>
+                            <option value="4">Self Ordering + POS + Kitchen</option>
+                            <option value="5">Dispatch + Delivery</option>
+                            <option value="6">Self Ordering + Kitchen</option>
+                            <option value="7">POS + Delivery</option>
+                          </select>
+                        </label>
+                      </div>
+                    )}
+
+                    <div className="overview-section">
+                      <div className="eyebrow">Included Modules</div>
+                      <h3>Module access</h3>
+                      <div className="detail-grid">
+                        {restaurantPackageRows.map((module) => (
+                          <div className="detail-item" key={module.module_key}>
+                            <span>{module.module_name}</span>
+                            <label className="toggle-row">
+                              <input
+                                className="toggle-input"
+                                type="checkbox"
+                                checked={module.effective_enabled}
+                                onChange={(event) => void setRestaurantModuleEnabled(module.module_key, event.target.checked)}
+                                disabled={!canManage || !module.included_by_package || packageSaving}
+                              />
+                              <span className="toggle-switch" aria-hidden="true"><span /></span>
+                              <span className="toggle-label">
+                                {!module.included_by_package
+                                  ? 'Not included'
+                                  : module.effective_enabled
+                                    ? 'Enabled'
+                                    : 'Disabled'}
+                              </span>
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="status-panel">
+                      <div>
+                        <strong>Package controls</strong>
+                        <span>{canManage ? 'Changing the package resets module overrides to the package defaults.' : 'View Only access can review the package but cannot change access.'}</span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           ) : manageTab === 'staff' ? (
