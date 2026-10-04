@@ -76,6 +76,9 @@ function App() {
   const [inviteAdminConfirmationEmail, setInviteAdminConfirmationEmail] = useState('');
   const [showInviteTenant, setShowInviteTenant] = useState(false);
   const [inviteTenantEmail, setInviteTenantEmail] = useState('');
+  const [inviteTenantRestaurantName, setInviteTenantRestaurantName] = useState('');
+  const [inviteTenantSlug, setInviteTenantSlug] = useState('');
+  const [inviteTenantPackageId, setInviteTenantPackageId] = useState('1');
   const [inviteTenantSaving, setInviteTenantSaving] = useState(false);
   const [inviteTenantError, setInviteTenantError] = useState('');
   const [inviteTenantSuccess, setInviteTenantSuccess] = useState('');
@@ -837,14 +840,23 @@ function App() {
     setInviteTenantSuccess('');
 
     const email = inviteTenantEmail.trim().toLowerCase();
-    if (!email) {
-      setInviteTenantError('Tenant owner email is required.');
+    const restaurantName = inviteTenantRestaurantName.trim();
+    const slug = inviteTenantSlug.trim().toLowerCase();
+    const packageId = Number(inviteTenantPackageId);
+
+    if (!email || !restaurantName || !slug || !Number.isInteger(packageId) || packageId < 1) {
+      setInviteTenantError('Restaurant name, slug, package, and owner email are required.');
       setInviteTenantSaving(false);
       return;
     }
 
     const { data, error } = await supabase.functions.invoke('system-admin-invite-tenant', {
-      body: { email },
+      body: {
+        email,
+        name: restaurantName,
+        slug,
+        package_id: packageId,
+      },
     });
 
     if (error) {
@@ -871,8 +883,11 @@ function App() {
       return;
     }
 
-    setInviteTenantSuccess(`Invitation sent to ${email}. The tenant will create their own restaurant identity after accepting.`);
+    setInviteTenantSuccess(`Restaurant "${restaurantName}" was created and package ${packageId} was assigned. Invitation sent to ${email}.`);
     setInviteTenantEmail('');
+    setInviteTenantRestaurantName('');
+    setInviteTenantSlug('');
+    setInviteTenantPackageId('1');
     setInviteTenantSaving(false);
   }
 
@@ -2788,22 +2803,65 @@ function App() {
 
             <form className="restaurant-form" onSubmit={inviteTenant}>
               <p>
-                Send an invitation to the business owner. They will create their own
-                restaurant name, slug, branding, settings, and other restaurant identity
-                after accepting the invitation.
+                Create the restaurant tenant, assign its package, and send the owner their setup invitation.
               </p>
 
-              <label>
-                Tenant owner email
-                <input
-                  type="email"
-                  value={inviteTenantEmail}
-                  onChange={(event) => setInviteTenantEmail(event.target.value)}
-                  placeholder="owner@example.com"
-                  required
-                  disabled={inviteTenantSaving}
-                />
-              </label>
+              <div className="form-grid">
+                <label>
+                  Restaurant name
+                  <input
+                    value={inviteTenantRestaurantName}
+                    onChange={(event) => setInviteTenantRestaurantName(event.target.value)}
+                    placeholder="My Restaurant"
+                    required
+                    disabled={inviteTenantSaving}
+                  />
+                </label>
+
+                <label>
+                  Restaurant slug
+                  <input
+                    value={inviteTenantSlug}
+                    onChange={(event) => setInviteTenantSlug(event.target.value.toLowerCase())}
+                    placeholder="my-restaurant"
+                    pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                    title="Use lowercase letters, numbers, and single hyphens."
+                    required
+                    disabled={inviteTenantSaving}
+                  />
+                </label>
+              </div>
+
+              <div className="form-grid">
+                <label>
+                  Package
+                  <select
+                    value={inviteTenantPackageId}
+                    onChange={(event) => setInviteTenantPackageId(event.target.value)}
+                    disabled={inviteTenantSaving}
+                  >
+                    <option value="1">1 — Full System</option>
+                    <option value="2">2 — Self Ordering + POS</option>
+                    <option value="3">3 — POS</option>
+                    <option value="4">4 — Self Ordering + POS + Kitchen</option>
+                    <option value="5">5 — Dispatch + Delivery</option>
+                    <option value="6">6 — Self Ordering + Kitchen</option>
+                    <option value="7">7 — POS + Delivery</option>
+                  </select>
+                </label>
+
+                <label>
+                  Owner email
+                  <input
+                    type="email"
+                    value={inviteTenantEmail}
+                    onChange={(event) => setInviteTenantEmail(event.target.value)}
+                    placeholder="owner@example.com"
+                    required
+                    disabled={inviteTenantSaving}
+                  />
+                </label>
+              </div>
 
               {inviteTenantError && <div className="error-banner">{inviteTenantError}</div>}
               {inviteTenantSuccess && <div className="success-banner">{inviteTenantSuccess}</div>}
