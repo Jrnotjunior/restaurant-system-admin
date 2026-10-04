@@ -134,6 +134,9 @@ function App() {
   }>>([]);
   const [auditSearch, setAuditSearch] = useState('');
   const [auditEventFilter, setAuditEventFilter] = useState('ALL');
+  const [auditDatePreset, setAuditDatePreset] = useState<'ALL' | 'TODAY' | '7_DAYS' | '30_DAYS' | 'CUSTOM'>('ALL');
+  const [auditStartDate, setAuditStartDate] = useState('');
+  const [auditEndDate, setAuditEndDate] = useState('');
   const [selectedAuditLog, setSelectedAuditLog] = useState<typeof auditLogs[number] | null>(null);
 
   async function recordAuthAuditEvent(
@@ -798,10 +801,44 @@ function App() {
 
   const filteredAuditLogs = useMemo(() => {
     const term = auditSearch.trim().toLowerCase();
+    const now = new Date();
+    let dateStart: Date | null = null;
+    let dateEnd: Date | null = null;
+
+    if (auditDatePreset === 'TODAY') {
+      dateStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      dateEnd = new Date(dateStart);
+      dateEnd.setDate(dateEnd.getDate() + 1);
+    } else if (auditDatePreset === '7_DAYS') {
+      dateStart = new Date(now);
+      dateStart.setHours(0, 0, 0, 0);
+      dateStart.setDate(dateStart.getDate() - 6);
+      dateEnd = new Date(now);
+      dateEnd.setHours(0, 0, 0, 0);
+      dateEnd.setDate(dateEnd.getDate() + 1);
+    } else if (auditDatePreset === '30_DAYS') {
+      dateStart = new Date(now);
+      dateStart.setHours(0, 0, 0, 0);
+      dateStart.setDate(dateStart.getDate() - 29);
+      dateEnd = new Date(now);
+      dateEnd.setHours(0, 0, 0, 0);
+      dateEnd.setDate(dateEnd.getDate() + 1);
+    } else if (auditDatePreset === 'CUSTOM') {
+      if (auditStartDate) dateStart = new Date(auditStartDate + 'T00:00:00');
+      if (auditEndDate) {
+        dateEnd = new Date(auditEndDate + 'T00:00:00');
+        dateEnd.setDate(dateEnd.getDate() + 1);
+      }
+    }
 
     return auditLogs.filter((log) => {
       const eventMatches = auditEventFilter === 'ALL' || log.event_type === auditEventFilter;
       if (!eventMatches) return false;
+
+      const createdAt = new Date(log.created_at);
+      if (dateStart && createdAt < dateStart) return false;
+      if (dateEnd && createdAt >= dateEnd) return false;
+
       if (!term) return true;
 
       return [
@@ -813,7 +850,7 @@ function App() {
         JSON.stringify(log.details),
       ].join(' ').toLowerCase().includes(term);
     });
-  }, [auditLogs, auditSearch, auditEventFilter]);
+  }, [auditLogs, auditSearch, auditEventFilter, auditDatePreset, auditStartDate, auditEndDate]);
 
   function exportAuditLogs() {
     const headers = ['Date & Time', 'Administrator', 'Restaurant', 'Event', 'Action', 'Entity', 'Details'];
@@ -1024,6 +1061,19 @@ function App() {
               <option value="LOGOUT">Logout</option>
               <option value="ACCESS_DENIED">Access denied</option>
             </select>
+            <select value={auditDatePreset} onChange={(event) => setAuditDatePreset(event.target.value as typeof auditDatePreset)}>
+              <option value="ALL">All dates</option>
+              <option value="TODAY">Today</option>
+              <option value="7_DAYS">Last 7 days</option>
+              <option value="30_DAYS">Last 30 days</option>
+              <option value="CUSTOM">Custom range</option>
+            </select>
+            {auditDatePreset === 'CUSTOM' && (
+              <>
+                <input type="date" value={auditStartDate} onChange={(event) => setAuditStartDate(event.target.value)} aria-label="Audit start date" />
+                <input type="date" value={auditEndDate} onChange={(event) => setAuditEndDate(event.target.value)} aria-label="Audit end date" />
+              </>
+            )}
              <button className="secondary-button audit-export-button" type="button" onClick={exportAuditLogs} disabled={filteredAuditLogs.length === 0}>Export CSV</button>
           </div>
 
