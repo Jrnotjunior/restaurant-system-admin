@@ -297,9 +297,9 @@ function App() {
       return true;
     }
 
-    const { data: adminStatus, error } = await supabase.rpc('get_my_system_admin_status');
+    const accessLevel = await loadMyAccessLevel();
 
-    if (error || adminStatus !== true) {
+    if (!accessLevel) {
       await supabase.auth.signOut();
       setSignedIn(false);
       setAuthorized(false);
@@ -307,7 +307,6 @@ function App() {
       return false;
     }
 
-    await loadMyAccessLevel();
     setAuthorized(true);
     setInviteSetup(false);
     setLoading(false);
@@ -399,30 +398,22 @@ function App() {
       return;
     }
 
-    const { data: adminStatus, error: adminError } = await supabase.rpc('get_my_system_admin_status');
+    const accessLevel = await loadMyAccessLevel();
 
-    if (adminError) {
-      await supabase.auth.signOut();
-      setAuthorized(false);
-      window.alert(adminError.message);
-      return;
-    }
-
-    if (adminStatus !== true) {
+    if (!accessLevel) {
       await supabase.auth.signOut();
       setSignedIn(false);
       setAuthorized(false);
-      window.alert('This account is not authorized as a System Administrator.');
+      window.alert('This account does not have active System Administrator access.');
       return;
     }
 
     await recordAuthAuditEvent(
       'LOGIN_SUCCESS',
       'System Administrator signed in',
-      { source: 'system_admin_web_app' },
+      { source: 'system_admin_web_app', access_level: accessLevel },
     );
 
-    await loadMyAccessLevel();
     setAuthorized(true);
   }
 
