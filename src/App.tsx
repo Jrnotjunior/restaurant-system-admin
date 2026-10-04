@@ -1166,7 +1166,19 @@ function App() {
           <div className="account-menu">
             <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
             {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
-            <button type="button" className="account-menu-item" onClick={(event) => { event.preventDefault(); event.stopPropagation(); void signOut(); }}>Sign out</button>
+            <button
+              type="button"
+              className="account-menu-item"
+              onPointerDown={(event) => {
+                event.preventDefault();
+                void signOut();
+              }}
+              onClick={(event) => {
+                event.preventDefault();
+              }}
+            >
+              Sign out
+            </button>
           </div>
         )}
         <section className="dashboard-card system-dashboard-card">
@@ -1306,7 +1318,19 @@ function App() {
           <div className="account-menu">
             <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
             <button className="account-menu-item" onClick={() => setAccountMenuOpen(false)}>System Administrators</button>
-            <button className="account-menu-item" onClick={signOut}>Sign out</button>
+            <button
+                type="button"
+                className="account-menu-item"
+                onPointerDown={(event) => {
+                  event.preventDefault();
+                  void signOut();
+                }}
+                onClick={(event) => {
+                  event.preventDefault();
+                }}
+              >
+                Sign out
+              </button>
           </div>
         )}
         <section className="dashboard-card administrators-card">
@@ -1444,7 +1468,19 @@ function App() {
           <div className="account-menu">
             <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
             {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
-            <button className="account-menu-item" onClick={signOut}>Sign out</button>
+            <button
+                type="button"
+                className="account-menu-item"
+                onPointerDown={(event) => {
+                  event.preventDefault();
+                  void signOut();
+                }}
+                onClick={(event) => {
+                  event.preventDefault();
+                }}
+              >
+                Sign out
+              </button>
           </div>
         )}
 
@@ -1879,7 +1915,19 @@ function App() {
           <div className="account-menu">
             <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
             {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
-            <button className="account-menu-item" onClick={signOut}>Sign out</button>
+            <button
+                type="button"
+                className="account-menu-item"
+                onPointerDown={(event) => {
+                  event.preventDefault();
+                  void signOut();
+                }}
+                onClick={(event) => {
+                  event.preventDefault();
+                }}
+              >
+                Sign out
+              </button>
           </div>
         )}
 
@@ -2436,7 +2484,19 @@ function App() {
           <div className="account-menu">
             <div className="account-menu-header"><span>System Administrator</span><strong>{adminAccessLevel === 'owner' ? 'Owner' : adminAccessLevel === 'administrator' ? 'Administrator — Full Access' : 'View Only'}</strong></div>
             {adminAccessLevel === 'owner' && <button className="account-menu-item" onClick={() => openAdministrators()}>System Administrators</button>}
-            <button className="account-menu-item" onClick={signOut}>Sign out</button>
+            <button
+                type="button"
+                className="account-menu-item"
+                onPointerDown={(event) => {
+                  event.preventDefault();
+                  void signOut();
+                }}
+                onClick={(event) => {
+                  event.preventDefault();
+                }}
+              >
+                Sign out
+              </button>
           </div>
         )}
 
