@@ -137,6 +137,8 @@ function App() {
   const [auditDatePreset, setAuditDatePreset] = useState<'ALL' | 'TODAY' | '7_DAYS' | '30_DAYS' | 'CUSTOM'>('ALL');
   const [auditStartDate, setAuditStartDate] = useState('');
   const [auditEndDate, setAuditEndDate] = useState('');
+  const [auditPageNumber, setAuditPageNumber] = useState(0);
+  const [auditHasMore, setAuditHasMore] = useState(false);
   const [selectedAuditLog, setSelectedAuditLog] = useState<typeof auditLogs[number] | null>(null);
 
   async function recordAuthAuditEvent(
@@ -664,21 +666,67 @@ function App() {
     setOwnerSaving(false);
   }
 
-  async function loadAuditLogs() {
+  async function loadAuditLogs(pageNumber = auditPageNumber) {
     setAuditLoading(true);
     setAuditError('');
 
+    const now = new Date();
+    let startDate: string | null = null;
+    let endDate: string | null = null;
+
+    if (auditDatePreset === 'TODAY') {
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const end = new Date(start);
+      end.setDate(end.getDate() + 1);
+      startDate = start.toISOString();
+      endDate = end.toISOString();
+    } else if (auditDatePreset === '7_DAYS') {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      start.setDate(start.getDate() - 6);
+      const end = new Date(now);
+      end.setHours(0, 0, 0, 0);
+      end.setDate(end.getDate() + 1);
+      startDate = start.toISOString();
+      endDate = end.toISOString();
+    } else if (auditDatePreset === '30_DAYS') {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      start.setDate(start.getDate() - 29);
+      const end = new Date(now);
+      end.setHours(0, 0, 0, 0);
+      end.setDate(end.getDate() + 1);
+      startDate = start.toISOString();
+      endDate = end.toISOString();
+    } else if (auditDatePreset === 'CUSTOM') {
+      if (auditStartDate) startDate = new Date(auditStartDate + 'T00:00:00').toISOString();
+      if (auditEndDate) {
+        const end = new Date(auditEndDate + 'T00:00:00');
+        end.setDate(end.getDate() + 1);
+        endDate = end.toISOString();
+      }
+    }
+
+    const pageSize = 50;
     const { data, error } = await supabase.rpc('system_admin_get_audit_logs', {
       p_restaurant_id: null,
-      p_event_type: null,
-      p_limit: 500,
+      p_event_type: auditEventFilter === 'ALL' ? null : auditEventFilter,
+      p_limit: pageSize,
+      p_offset: pageNumber * pageSize,
+      p_search: auditSearch.trim() || null,
+      p_start_date: startDate,
+      p_end_date: endDate,
     });
 
     if (error) {
       setAuditError(error.message);
       setAuditLogs([]);
+      setAuditHasMore(false);
     } else {
-      setAuditLogs((Array.isArray(data) ? data : []) as typeof auditLogs);
+      const logs = (Array.isArray(data) ? data : []) as typeof auditLogs;
+      setAuditLogs(logs);
+      setAuditHasMore(logs.length === pageSize);
+      setAuditPageNumber(pageNumber);
     }
 
     setAuditLoading(false);
@@ -687,7 +735,8 @@ function App() {
   function openAuditLogs() {
     setSelectedRestaurant(null);
     setAdminPage('audit');
-    void loadAuditLogs();
+    setAuditPageNumber(0);
+    void loadAuditLogs(0);
   }
 
   async function loadRestaurants() {
@@ -761,7 +810,7 @@ function App() {
   useEffect(() => {
     if (!authorized || adminPage !== 'audit') return;
 
-    void loadAuditLogs();
+    void loadAuditLogs(0);
 
     const channel = supabase
       .channel('system-admin-audit-logs')
@@ -799,58 +848,12 @@ function App() {
     };
   }, [authorized, adminPage]);
 
-  const filteredAuditLogs = useMemo(() => {
-    const term = auditSearch.trim().toLowerCase();
-    const now = new Date();
-    let dateStart: Date | null = null;
-    let dateEnd: Date | null = null;
+  const filteredAuditLogs = auditLogs;
 
-    if (auditDatePreset === 'TODAY') {
-      dateStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      dateEnd = new Date(dateStart);
-      dateEnd.setDate(dateEnd.getDate() + 1);
-    } else if (auditDatePreset === '7_DAYS') {
-      dateStart = new Date(now);
-      dateStart.setHours(0, 0, 0, 0);
-      dateStart.setDate(dateStart.getDate() - 6);
-      dateEnd = new Date(now);
-      dateEnd.setHours(0, 0, 0, 0);
-      dateEnd.setDate(dateEnd.getDate() + 1);
-    } else if (auditDatePreset === '30_DAYS') {
-      dateStart = new Date(now);
-      dateStart.setHours(0, 0, 0, 0);
-      dateStart.setDate(dateStart.getDate() - 29);
-      dateEnd = new Date(now);
-      dateEnd.setHours(0, 0, 0, 0);
-      dateEnd.setDate(dateEnd.getDate() + 1);
-    } else if (auditDatePreset === 'CUSTOM') {
-      if (auditStartDate) dateStart = new Date(auditStartDate + 'T00:00:00');
-      if (auditEndDate) {
-        dateEnd = new Date(auditEndDate + 'T00:00:00');
-        dateEnd.setDate(dateEnd.getDate() + 1);
-      }
-    }
-
-    return auditLogs.filter((log) => {
-      const eventMatches = auditEventFilter === 'ALL' || log.event_type === auditEventFilter;
-      if (!eventMatches) return false;
-
-      const createdAt = new Date(log.created_at);
-      if (dateStart && createdAt < dateStart) return false;
-      if (dateEnd && createdAt >= dateEnd) return false;
-
-      if (!term) return true;
-
-      return [
-        log.admin_email ?? '',
-        log.admin_name ?? '',
-        log.restaurant_name ?? '',
-        log.action,
-        log.event_type,
-        JSON.stringify(log.details),
-      ].join(' ').toLowerCase().includes(term);
-    });
-  }, [auditLogs, auditSearch, auditEventFilter, auditDatePreset, auditStartDate, auditEndDate]);
+  function resetAuditFiltersAndReload() {
+    setAuditPageNumber(0);
+    void loadAuditLogs(0);
+  }
 
   function exportAuditLogs() {
     const headers = ['Date & Time', 'Administrator', 'Restaurant', 'Event', 'Action', 'Entity', 'Details'];
