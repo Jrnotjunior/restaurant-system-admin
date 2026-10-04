@@ -810,8 +810,6 @@ function App() {
   useEffect(() => {
     if (!authorized || adminPage !== 'audit') return;
 
-    void loadAuditLogs(0);
-
     const channel = supabase
       .channel('system-admin-audit-logs')
       .on(
@@ -847,6 +845,12 @@ function App() {
       void supabase.removeChannel(channel);
     };
   }, [authorized, adminPage]);
+
+  useEffect(() => {
+    if (!authorized || adminPage !== 'audit') return;
+    setAuditPageNumber(0);
+    void loadAuditLogs(0);
+  }, [authorized, adminPage, auditSearch, auditEventFilter, auditDatePreset, auditStartDate, auditEndDate]);
 
   const filteredAuditLogs = auditLogs;
 
@@ -1148,6 +1152,26 @@ function App() {
               </table>
             </div>
           )}
+
+          <div className="audit-pagination">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => void loadAuditLogs(Math.max(0, auditPageNumber - 1))}
+              disabled={auditLoading || auditPageNumber === 0}
+            >
+              Previous
+            </button>
+            <span>Page {auditPageNumber + 1}</span>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => void loadAuditLogs(auditPageNumber + 1)}
+              disabled={auditLoading || !auditHasMore}
+            >
+              Next
+            </button>
+          </div>
         </section>
       </main>
     );
