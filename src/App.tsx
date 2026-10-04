@@ -976,14 +976,29 @@ function App() {
             <>
               <div className="dashboard-section-label">Restaurant Operations</div>
               <div className="system-stats-grid">
-                <div className="stat-card"><span>Total restaurants</span><strong>{dashboardSummary?.total_restaurants ?? 0}</strong></div>
-                <div className="stat-card"><span>Active restaurants</span><strong>{dashboardSummary?.active_restaurants ?? 0}</strong></div>
-                <div className="stat-card"><span>Inactive restaurants</span><strong>{dashboardSummary?.inactive_restaurants ?? 0}</strong></div>
+                <button className="stat-card dashboard-stat-button" type="button" onClick={openRestaurants}>
+                  <span>Total restaurants</span>
+                  <strong>{dashboardSummary?.total_restaurants ?? 0}</strong>
+                </button>
+                <button className="stat-card dashboard-stat-button" type="button" onClick={openRestaurants}>
+                  <span>Active restaurants</span>
+                  <strong>{dashboardSummary?.active_restaurants ?? 0}</strong>
+                </button>
+                <button className="stat-card dashboard-stat-button" type="button" onClick={openRestaurants}>
+                  <span>Inactive restaurants</span>
+                  <strong>{dashboardSummary?.inactive_restaurants ?? 0}</strong>
+                </button>
               </div>
               <div className="dashboard-section-label">System Administration</div>
               <div className="system-stats-grid">
-                <div className="stat-card"><span>Active administrators</span><strong>{dashboardSummary?.active_system_administrators ?? 0}</strong></div>
-                <div className="stat-card"><span>Pending invitations</span><strong>{dashboardSummary?.pending_system_administrators ?? 0}</strong></div>
+                <button className="stat-card dashboard-stat-button" type="button" onClick={openAdministrators} disabled={adminAccessLevel !== 'owner'} title={adminAccessLevel === 'owner' ? 'Open System Administrators' : 'Administrator management is restricted to the Owner'}>
+                  <span>Active administrators</span>
+                  <strong>{dashboardSummary?.active_system_administrators ?? 0}</strong>
+                </button>
+                <button className="stat-card dashboard-stat-button" type="button" onClick={openAdministrators} disabled={adminAccessLevel !== 'owner'} title={adminAccessLevel === 'owner' ? 'Open System Administrators' : 'Administrator management is restricted to the Owner'}>
+                  <span>Pending invitations</span>
+                  <strong>{dashboardSummary?.pending_system_administrators ?? 0}</strong>
+                </button>
               </div>
               <div className="dashboard-activity">
                 <div className="dashboard-activity-heading">
