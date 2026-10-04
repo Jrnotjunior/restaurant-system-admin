@@ -82,6 +82,7 @@ function App() {
   const [form, setForm] = useState<RestaurantForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+  const canManage = adminAccessLevel === 'owner' || adminAccessLevel === 'administrator';
   const [manageTab, setManageTab] = useState<'overview' | 'owner' | 'domain' | 'settings' | 'staff'>('overview');
   const [staffLoading, setStaffLoading] = useState(false);
   const [staffError, setStaffError] = useState('');
@@ -518,9 +519,7 @@ function App() {
     }
 
 
-  const canManage = adminAccessLevel === 'owner' || adminAccessLevel === 'administrator';
-
-  if (selectedRestaurant) {
+    if (selectedRestaurant) {
       await loadRestaurantStaff(selectedRestaurant.id);
     }
 
