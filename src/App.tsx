@@ -222,8 +222,65 @@ function App() {
     setAdministratorsLoading(false);
   }
 
-  function openAdministrators() {
+  function getNavigationFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const page = params.get('page');
+    const restaurantId = params.get('restaurantId');
+    const auditId = params.get('auditId');
+
+    if (page === 'restaurant' && restaurantId) {
+      return { page: 'restaurant' as const, restaurantId, auditId: null };
+    }
+
+    if (page === 'restaurants') return { page: 'restaurants' as const, restaurantId: null, auditId: null };
+    if (page === 'audit') return { page: 'audit' as const, restaurantId: null, auditId };
+    if (page === 'administrators') return { page: 'administrators' as const, restaurantId: null, auditId: null };
+    return { page: 'dashboard' as const, restaurantId: null, auditId: null };
+  }
+
+  function pushNavigation(page: 'dashboard' | 'restaurants' | 'audit' | 'administrators' | 'restaurant', options: { restaurantId?: string; auditId?: string } = {}) {
+    const params = new URLSearchParams();
+    params.set('page', page);
+    if (options.restaurantId) params.set('restaurantId', options.restaurantId);
+    if (options.auditId) params.set('auditId', options.auditId);
+    window.history.pushState({}, '', `?${params.toString()}`);
+  }
+
+  function applyNavigationFromUrl() {
+    const navigation = getNavigationFromUrl();
+    setAccountMenuOpen(false);
+
+    if (navigation.page === 'restaurant' && navigation.restaurantId) {
+      const restaurant = restaurants.find((item) => item.id === navigation.restaurantId);
+      if (restaurant) {
+        setAdminPage('restaurants');
+        openRestaurant(restaurant, false);
+        return;
+      }
+      setAdminPage('restaurants');
+      setSelectedRestaurant(null);
+      void loadRestaurants();
+      return;
+    }
+
+    setSelectedRestaurant(null);
+    setAdminPage(navigation.page === 'restaurant' ? 'restaurants' : navigation.page);
+
+    if (navigation.page === 'dashboard') {
+      void loadDashboard();
+    } else if (navigation.page === 'restaurants') {
+      void loadRestaurants();
+    } else if (navigation.page === 'audit') {
+      setAuditPageNumber(0);
+      void loadAuditLogs(0);
+    } else if (navigation.page === 'administrators' && adminAccessLevel === 'owner') {
+      void loadAdministrators();
+    }
+  }
+
+  function openAdministrators(pushHistory = true) {
     if (adminAccessLevel !== 'owner') return;
+    if (pushHistory) pushNavigation('administrators');
     setAccountMenuOpen(false);
     setAdminPage('administrators');
     setSelectedRestaurant(null);
@@ -770,21 +827,24 @@ function App() {
     setAuditLoading(false);
   }
 
-  function openDashboard() {
+  function openDashboard(pushHistory = true) {
+    if (pushHistory) pushNavigation('dashboard');
     setSelectedRestaurant(null);
     setAccountMenuOpen(false);
     setAdminPage('dashboard');
     void loadDashboard();
   }
 
-  function openRestaurants() {
+  function openRestaurants(pushHistory = true) {
+    if (pushHistory) pushNavigation('restaurants');
     setSelectedRestaurant(null);
     setAccountMenuOpen(false);
     setAdminPage('restaurants');
     void loadRestaurants();
   }
 
-  function openAuditLogs() {
+  function openAuditLogs(pushHistory = true) {
+    if (pushHistory) pushNavigation('audit');
     setSelectedRestaurant(null);
     setAdminPage('audit');
     setAuditPageNumber(0);
@@ -905,6 +965,53 @@ function App() {
   }, [authorized, adminPage, auditSearch, auditEventFilter, auditDatePreset, auditStartDate, auditEndDate]);
 
   useEffect(() => {
+    if (!authorized) return;
+
+    const navigation = getNavigationFromUrl();
+    const params = new URLSearchParams(window.location.search);
+
+    if (!params.get('page')) {
+      params.set('page', 'dashboard');
+      window.history.replaceState({}, '', `?${params.toString()}`);
+    }
+
+    applyNavigationFromUrl();
+
+    const handlePopState = () => {
+      const current = getNavigationFromUrl();
+
+      if (current.page === 'restaurant' && current.restaurantId) {
+        const restaurant = restaurants.find((item) => item.id === current.restaurantId);
+        if (restaurant) {
+          openRestaurant(restaurant, false);
+          return;
+        }
+        void loadRestaurants();
+        return;
+      }
+
+      setSelectedAuditLog(null);
+      setSelectedRestaurant(null);
+      setAdminPage(current.page === 'restaurant' ? 'restaurants' : current.page);
+
+      if (current.page === 'dashboard') void loadDashboard();
+      if (current.page === 'restaurants') void loadRestaurants();
+      if (current.page === 'audit') {
+        setAuditPageNumber(0);
+        void loadAuditLogs(0);
+        if (current.auditId) {
+          const log = auditLogs.find((item) => item.id === current.auditId);
+          if (log) setSelectedAuditLog(log);
+        }
+      }
+      if (current.page === 'administrators' && adminAccessLevel === 'owner') void loadAdministrators();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [authorized]);
+
+  useEffect(() => {
     if (!authorized || adminPage !== 'dashboard') return;
     void loadDashboard();
   }, [authorized, adminPage]);
@@ -1008,7 +1115,7 @@ function App() {
                 {dashboardRecentLogs.length === 0 ? <div className="empty-state">No recent platform activity.</div> : (
                   <div className="dashboard-activity-list">
                     {dashboardRecentLogs.map((log) => (
-                      <button className="dashboard-activity-row" type="button" key={log.id} onClick={() => { setAdminPage('audit'); setSelectedAuditLog(log); }}>
+                      <button className="dashboard-activity-row" type="button" key={log.id} onClick={() => { openAuditLogs(); setSelectedAuditLog(log); }}>
                         <div><strong>{log.action}</strong><span>{log.admin_name || log.admin_email || 'Unknown administrator'}{log.restaurant_name ? ` • ${log.restaurant_name}` : ''}</span></div>
                         <time>{new Date(log.created_at).toLocaleString()}</time>
                       </button>
@@ -1280,7 +1387,7 @@ function App() {
                           )}
                         </td>
                          <td>
-                           <button className="secondary-button audit-view-button" type="button" onClick={() => setSelectedAuditLog(log)}>View</button>
+                           <button className="secondary-button audit-view-button" type="button" onClick={() => { pushNavigation('audit', { auditId: log.id }); setSelectedAuditLog(log); }}>View</button>
                          </td>
                       </tr>
                     );
@@ -1320,7 +1427,7 @@ function App() {
       <section className="modal-card audit-detail-modal" role="dialog" aria-modal="true" aria-labelledby="audit-detail-title">
         <div className="modal-heading">
           <div><div className="eyebrow">Audit Event</div><h2 id="audit-detail-title">Event details</h2></div>
-          <button className="icon-button" type="button" onClick={() => setSelectedAuditLog(null)} aria-label="Close">×</button>
+          <button className="icon-button" type="button" onClick={() => { if (new URLSearchParams(window.location.search).get('auditId')) window.history.back(); else setSelectedAuditLog(null); }} aria-label="Close">×</button>
         </div>
         <div className="audit-detail-grid">
           <div><span>Date &amp; Time</span><strong>{new Date(selectedAuditLog.created_at).toLocaleString()}</strong></div>
@@ -1331,13 +1438,15 @@ function App() {
           <div><span>Entity</span><strong>{selectedAuditLog.entity_type || '—'}</strong></div>
         </div>
         <div className="audit-json-panel"><div className="eyebrow">Recorded details</div><pre>{JSON.stringify(selectedAuditLog.details ?? {}, null, 2)}</pre></div>
-        <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setSelectedAuditLog(null)}>Close</button></div>
+        <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => { if (new URLSearchParams(window.location.search).get('auditId')) window.history.back(); else setSelectedAuditLog(null); }}>Close</button></div>
       </section>
     </div>
   )}
 
-  function openRestaurant(restaurant: Restaurant) {
+  function openRestaurant(restaurant: Restaurant, pushHistory = true) {
+    if (pushHistory) pushNavigation('restaurant', { restaurantId: restaurant.id });
     setSelectedRestaurant(restaurant);
+    setAdminPage('restaurants');
     setManageTab('overview');
     setOwnerEmail('');
     setOwnerName('');
@@ -1349,7 +1458,8 @@ function App() {
     setRestaurantError('');
   }
 
-  function closeRestaurant() {
+  function closeRestaurant(pushHistory = true) {
+    if (pushHistory) pushNavigation('restaurants');
     setSelectedRestaurant(null);
   }
 
