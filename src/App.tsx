@@ -1465,7 +1465,7 @@ function App() {
               <div className="dashboard-section-label">Attention Required</div>
               <div className="dashboard-command-grid">
                 <div className="dashboard-attention-panel">
-                  {dashboardPlatformHealth?.configurationWarnings?.length ? dashboardPlatformHealth.configurationWarnings.slice(0, 4).map((warning) => (
+                  {dashboardPlatformHealth?.configurationWarnings?.filter((warning) => !warning.toLowerCase().includes('openai')).length ? dashboardPlatformHealth.configurationWarnings.filter((warning) => !warning.toLowerCase().includes('openai')).slice(0, 4).map((warning) => (
                     <div className="dashboard-attention-row" key={warning}><span className="dashboard-attention-icon">!</span><div><strong>Configuration</strong><span>{warning}</span></div></div>
                   )) : dashboardPlatformHealth?.incidents?.length ? dashboardPlatformHealth.incidents.slice(0, 4).map((incident, index) => (
                     <div className="dashboard-attention-row" key={`${incident.service}-${index}`}><span className={`dashboard-attention-icon dashboard-attention-${incident.severity}`}>{incident.severity === 'critical' ? '!' : '•'}</span><div><strong>{incident.title}</strong><span>{incident.summary}</span></div></div>
