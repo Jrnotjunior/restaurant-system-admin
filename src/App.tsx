@@ -162,6 +162,13 @@ function App() {
     logged_in_now: number | null;
   }>>([]);
   const [dashboardRecentLogs, setDashboardRecentLogs] = useState<typeof auditLogs>([]);
+  const [dashboardPlatformHealth, setDashboardPlatformHealth] = useState<{
+    overallStatus: 'healthy' | 'degraded' | 'critical' | 'unknown';
+    generatedAt: string;
+    services: Array<{ key: string; name: string; status: 'healthy' | 'degraded' | 'critical' | 'unknown'; latencyMs: number | null; message: string }>;
+    incidents: Array<{ severity: 'info' | 'warning' | 'critical'; service: string; title: string; summary: string; recommendation?: string }>;
+    configurationWarnings: string[];
+  } | null>(null);
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditError, setAuditError] = useState('');
   const [auditLogs, setAuditLogs] = useState<Array<{
@@ -960,7 +967,7 @@ function App() {
     setDashboardLoading(true);
     setDashboardError('');
 
-    const [summaryResult, monitoringResult, logsResult] = await Promise.all([
+    const [summaryResult, monitoringResult, logsResult, healthResult] = await Promise.all([
       supabase.rpc('system_admin_get_dashboard_summary'),
       supabase.rpc('system_admin_get_restaurant_monitoring'),
       supabase.rpc('system_admin_get_audit_logs', {
@@ -972,6 +979,7 @@ function App() {
         p_start_date: null,
         p_end_date: null,
       }),
+      supabase.functions.invoke('system-admin-platform-health', { body: {} }),
     ]);
 
     if (summaryResult.error) {
@@ -1002,6 +1010,12 @@ function App() {
       setDashboardRecentLogs([]);
     } else {
       setDashboardRecentLogs((Array.isArray(logsResult.data) ? logsResult.data : []) as typeof auditLogs);
+    }
+
+    if (healthResult.error || !healthResult.data || healthResult.data.error) {
+      setDashboardPlatformHealth(null);
+    } else {
+      setDashboardPlatformHealth(healthResult.data as typeof dashboardPlatformHealth);
     }
 
     setDashboardLoading(false);
@@ -1430,103 +1444,48 @@ function App() {
         )}
         <section className="dashboard-card system-dashboard-card">
           <div className="section-heading">
-            <div><div className="eyebrow">Platform Overview</div><h2>Dashboard</h2><p>Monitor restaurants, administrator access, and recent platform activity.</p></div>
+            <div><div className="eyebrow">Platform Command Center</div><h2>System Dashboard</h2><p>See platform health, operational activity, and anything that needs your attention.</p></div>
+            <button className="secondary-button dashboard-health-button" type="button" onClick={() => openPlatformHealth()}>Open Platform Health</button>
           </div>
           {dashboardError && <div className="error-banner">{dashboardError}</div>}
-          {dashboardLoading && !dashboardSummary ? (
-            <div className="empty-state">Loading platform overview...</div>
-          ) : (
-            <>              <div className="dashboard-section-label">Restaurant Operations</div>
-              <div className="system-stats-grid">
-                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openRestaurants()}>
-                  <span>Total restaurants</span>
-                  <strong>{dashboardSummary?.total_restaurants ?? 0}</strong>
-                </button>
-                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openRestaurants()}>
-                  <span>Active restaurants</span>
-                  <strong>{dashboardSummary?.active_restaurants ?? 0}</strong>
-                </button>
-                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openRestaurants()}>
-                  <span>Inactive restaurants</span>
-                  <strong>{dashboardSummary?.inactive_restaurants ?? 0}</strong>
-                </button>
-              </div>
-              <div className="dashboard-section-label">System Administration</div>
-              <div className="system-stats-grid">
-                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openAdministrators()} disabled={adminAccessLevel !== 'owner'} title={adminAccessLevel === 'owner' ? 'Open System Administrators' : 'Administrator management is restricted to the Owner'}>
-                  <span>Active administrators</span>
-                  <strong>{dashboardSummary?.active_system_administrators ?? 0}</strong>
-                </button>
-                <button className="stat-card dashboard-stat-button" type="button" onClick={() => openAdministrators()} disabled={adminAccessLevel !== 'owner'} title={adminAccessLevel === 'owner' ? 'Open System Administrators' : 'Administrator management is restricted to the Owner'}>
-                  <span>Pending invitations</span>
-                  <strong>{dashboardSummary?.pending_system_administrators ?? 0}</strong>
-                </button>
-              </div>
-              <div className="dashboard-section-label">Restaurant Monitoring</div>
-              <div className="dashboard-monitoring">
-                <div className="dashboard-monitoring-heading">
-                  <div>
-                    <div className="eyebrow">Live Operations</div>
-                    <h3>Restaurant Activity</h3>
-                    <p>Monitor customer and order activity across all restaurants.</p>
+          {dashboardLoading && !dashboardSummary ? <div className="empty-state">Loading platform command center...</div> : (
+            <>
+              <div className={`dashboard-platform-status dashboard-platform-status-${dashboardPlatformHealth?.overallStatus ?? 'unknown'}`}>
+                <div>
+                  <div className="eyebrow">Platform Status</div>
+                  <div className="dashboard-platform-status-title"><span className="dashboard-status-dot" />
+                    {dashboardPlatformHealth?.overallStatus === 'critical' ? 'Critical' : dashboardPlatformHealth?.overallStatus === 'degraded' ? 'Degraded' : dashboardPlatformHealth?.overallStatus === 'healthy' ? 'Operational' : 'Health data unavailable'}
                   </div>
+                  <p>{dashboardPlatformHealth?.generatedAt ? `Last checked ${new Date(dashboardPlatformHealth.generatedAt).toLocaleString()}` : 'Run Platform Health to refresh dependency status.'}</p>
                 </div>
-                {dashboardRestaurantMonitoring.length === 0 ? (
-                  <div className="empty-state">No restaurant monitoring data available.</div>
-                ) : (
-                  <div className="dashboard-monitoring-table-wrap">
-                    <table className="dashboard-monitoring-table">
-                      <thead>
-                        <tr>
-                          <th>Restaurant</th>
-                          <th>Status</th>
-                          <th>Customer Accounts</th>
-                          <th>Logged In Now</th>
-                          <th>Customers Ordered Today</th>
-                          <th>Orders Today</th>
-                          <th>Processing</th>
-                          <th>Last Activity</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dashboardRestaurantMonitoring.map((monitoring) => (
-                          <tr key={monitoring.restaurant_id}>
-                            <td><strong>{monitoring.restaurant_name}</strong></td>
-                            <td>
-                              <span className={monitoring.is_active ? 'status active' : 'status inactive'}>
-                                {monitoring.is_active ? 'Active' : 'Inactive'}
-                              </span>
-                            </td>
-                            <td>{monitoring.customer_accounts}</td>
-                            <td>{monitoring.logged_in_now ?? '—'}</td>
-                            <td>{monitoring.customers_ordered_today}</td>
-                            <td>{monitoring.orders_today}</td>
-                            <td>{monitoring.processing_orders}</td>
-                            <td className="dashboard-monitoring-last-activity">
-                              {monitoring.last_activity ? new Date(monitoring.last_activity).toLocaleString() : 'No activity'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-              <div className="dashboard-activity">
-                <div className="dashboard-activity-heading">
-                  <div><div className="eyebrow">Accountability</div><h3>Recent Platform Activity</h3></div>
-                  <button className="secondary-button" type="button" onClick={() => openAuditLogs()}>View Audit Logs</button>
+                <div className="dashboard-platform-services">
+                  {(dashboardPlatformHealth?.services ?? []).map((service) => <div className="dashboard-service-chip" key={service.key}><span className={`dashboard-status-dot dashboard-status-dot-${service.status}`} /><strong>{service.name.replace('Web App — ', '')}</strong><span>{service.status}</span></div>)}
                 </div>
-                {dashboardRecentLogs.length === 0 ? <div className="empty-state">No recent platform activity.</div> : (
-                  <div className="dashboard-activity-list">
-                    {dashboardRecentLogs.map((log) => (
-                      <button className="dashboard-activity-row" type="button" key={log.id} onClick={() => openAuditLog(log)}>
-                        <div><strong>{log.action}</strong><span>{log.admin_name || log.admin_email || 'Unknown administrator'}{log.restaurant_name ? ` • ${log.restaurant_name}` : ''}</span></div>
-                        <time>{new Date(log.created_at).toLocaleString()}</time>
-                      </button>
-                    ))}
-                  </div>
-                )}
+              </div>
+              <div className="dashboard-section-label">Attention Required</div>
+              <div className="dashboard-command-grid">
+                <div className="dashboard-attention-panel">
+                  {dashboardPlatformHealth?.configurationWarnings?.length ? dashboardPlatformHealth.configurationWarnings.slice(0, 4).map((warning) => (
+                    <div className="dashboard-attention-row" key={warning}><span className="dashboard-attention-icon">!</span><div><strong>Configuration</strong><span>{warning}</span></div></div>
+                  )) : dashboardPlatformHealth?.incidents?.length ? dashboardPlatformHealth.incidents.slice(0, 4).map((incident, index) => (
+                    <div className="dashboard-attention-row" key={`${incident.service}-${index}`}><span className={`dashboard-attention-icon dashboard-attention-${incident.severity}`}>{incident.severity === 'critical' ? '!' : '•'}</span><div><strong>{incident.title}</strong><span>{incident.summary}</span></div></div>
+                  )) : <div className="dashboard-attention-empty"><span>✓</span><div><strong>No active issues</strong><span>Monitored dependencies are operating normally.</span></div></div>}
+                </div>
+                <div className="dashboard-ai-panel"><div className="eyebrow">Operations Analysis</div><h3>{dashboardPlatformHealth?.overallStatus === 'critical' ? 'Immediate attention recommended' : dashboardPlatformHealth?.overallStatus === 'degraded' ? 'Platform operational with warnings' : 'Platform operating normally'}</h3><p>{dashboardPlatformHealth?.incidents?.[0]?.summary ?? 'Health monitoring will surface dependency problems and operational warnings here.'}</p><button className="secondary-button" type="button" onClick={() => openPlatformHealth()}>View diagnosis</button></div>
+              </div>
+              <div className="dashboard-section-label">Live Operations</div>
+              <div className="system-stats-grid dashboard-kpi-grid">
+                <button className="stat-card dashboard-stat-button dashboard-kpi-card" type="button" onClick={() => openRestaurants()}><span>Restaurants</span><strong>{dashboardSummary?.active_restaurants ?? 0}<small> active</small></strong><em>{dashboardSummary?.total_restaurants ?? 0} total</em></button>
+                <div className="stat-card dashboard-kpi-card"><span>Orders today</span><strong>{dashboardRestaurantMonitoring.reduce((sum, item) => sum + (item.orders_today ?? 0), 0)}</strong><em>{dashboardRestaurantMonitoring.reduce((sum, item) => sum + (item.processing_orders ?? 0), 0)} processing now</em></div>
+                <div className="stat-card dashboard-kpi-card"><span>Customer activity</span><strong>{dashboardRestaurantMonitoring.reduce((sum, item) => sum + (item.customers_ordered_today ?? 0), 0)}</strong><em>customers ordered today</em></div>
+                <button className="stat-card dashboard-stat-button dashboard-kpi-card" type="button" onClick={() => openAdministrators()} disabled={adminAccessLevel !== 'owner'}><span>Administrators</span><strong>{dashboardSummary?.active_system_administrators ?? 0}</strong><em>{dashboardSummary?.pending_system_administrators ?? 0} pending invitation{dashboardSummary?.pending_system_administrators === 1 ? '' : 's'}</em></button>
+              </div>
+              <div className="dashboard-command-columns">
+                <div className="dashboard-monitoring">
+                  <div className="dashboard-monitoring-heading"><div><div className="eyebrow">Restaurant Operations</div><h3>Restaurant Activity</h3><p>Operational snapshot across every tenant.</p></div><button className="secondary-button" type="button" onClick={() => openRestaurants()}>Manage restaurants</button></div>
+                  {dashboardRestaurantMonitoring.length === 0 ? <div className="empty-state">No restaurant monitoring data available.</div> : <div className="dashboard-monitoring-table-wrap"><table className="dashboard-monitoring-table"><thead><tr><th>Restaurant</th><th>Status</th><th>Orders</th><th>Processing</th><th>Customers</th><th>Last activity</th></tr></thead><tbody>{dashboardRestaurantMonitoring.map((monitoring) => <tr key={monitoring.restaurant_id}><td><strong>{monitoring.restaurant_name}</strong></td><td><span className={monitoring.is_active ? 'status active' : 'status inactive'}>{monitoring.is_active ? 'Active' : 'Inactive'}</span></td><td>{monitoring.orders_today}</td><td>{monitoring.processing_orders}</td><td>{monitoring.customers_ordered_today}</td><td className="dashboard-monitoring-last-activity">{monitoring.last_activity ? new Date(monitoring.last_activity).toLocaleString() : 'No activity'}</td></tr>)}</tbody></table></div>}
+                </div>
+                <div className="dashboard-activity"><div className="dashboard-activity-heading"><div><div className="eyebrow">Accountability</div><h3>Recent System Events</h3></div><button className="secondary-button" type="button" onClick={() => openAuditLogs()}>View logs</button></div>{dashboardRecentLogs.length === 0 ? <div className="empty-state">No recent platform activity.</div> : <div className="dashboard-activity-list">{dashboardRecentLogs.slice(0, 6).map((log) => <button className="dashboard-activity-row" type="button" key={log.id} onClick={() => openAuditLog(log)}><div><strong>{log.action}</strong><span>{log.admin_name || log.admin_email || 'Unknown administrator'}{log.restaurant_name ? ` • ${log.restaurant_name}` : ''}</span></div><time>{new Date(log.created_at).toLocaleString()}</time></button>)}</div>}</div>
               </div>
             </>
           )}
