@@ -126,3 +126,35 @@ input{width:100%;margin-top:.4rem;border:1px solid rgba(255,255,255,.14);border-
 .platform-health-card{display:grid;gap:22px}.platform-health-overview{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:rgba(255,255,255,.025)}.platform-health-overview h2{display:flex;align-items:center;gap:10px;margin:8px 0;color:#fff;font-size:1.65rem}.platform-health-overview p{margin:0;color:rgba(255,255,255,.55)}.platform-health-overview-healthy{border-color:rgba(42,190,110,.25);background:rgba(42,190,110,.06)}.platform-health-overview-degraded{border-color:rgba(245,166,35,.28);background:rgba(245,166,35,.06)}.platform-health-overview-critical{border-color:rgba(213,0,28,.38);background:rgba(213,0,28,.08)}.platform-health-confidence{min-width:110px;text-align:center;color:rgba(255,255,255,.5);font-size:.76rem;text-transform:uppercase;letter-spacing:.05em}.platform-health-confidence strong{display:block;color:#fff;font-size:1.4rem;margin-top:3px}.platform-health-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.35);box-shadow:0 0 0 3px rgba(255,255,255,.04)}.platform-health-dot-healthy{background:#39c779;box-shadow:0 0 12px rgba(57,199,121,.45)}.platform-health-dot-degraded{background:#f3ad38;box-shadow:0 0 12px rgba(243,173,56,.4)}.platform-health-dot-critical{background:#ef3047;box-shadow:0 0 12px rgba(239,48,71,.45)}.platform-health-dot-unknown{background:#9b9b9b}.platform-health-services{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.platform-health-service{padding:18px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.025)}.platform-health-service-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}.platform-health-service h3{display:flex;align-items:center;gap:9px;margin:0;color:#fff;font-size:1rem}.platform-health-service p{margin:8px 0 0;color:rgba(255,255,255,.58);line-height:1.5;font-size:.88rem}.platform-health-status-healthy{background:rgba(57,199,121,.12);color:#67dc9b;border-color:rgba(57,199,121,.22)}.platform-health-status-degraded{background:rgba(243,173,56,.12);color:#ffc66a;border-color:rgba(243,173,56,.22)}.platform-health-status-critical{background:rgba(213,0,28,.14);color:#ff5b6d;border-color:rgba(213,0,28,.28)}.platform-health-status-unknown{background:rgba(255,255,255,.06);color:rgba(255,255,255,.58);border-color:rgba(255,255,255,.12)}.platform-health-metric{margin-top:13px;color:rgba(255,255,255,.45);font-size:.78rem}.platform-health-metric strong{color:rgba(255,255,255,.78)}.platform-health-ai{padding:20px;border:1px solid rgba(213,0,28,.22);border-radius:10px;background:linear-gradient(135deg,rgba(213,0,28,.08),rgba(255,255,255,.025))}.platform-health-ai p{margin:8px 0 0;color:rgba(255,255,255,.82);line-height:1.65;white-space:pre-wrap}.platform-health-warning{display:grid;gap:5px;padding:16px;border:1px solid rgba(243,173,56,.25);border-radius:10px;background:rgba(243,173,56,.07)}.platform-health-warning strong{color:#fff}.platform-health-warning span{color:rgba(255,255,255,.62);font-size:.86rem}.platform-health-incidents{display:grid;gap:10px}.platform-health-incident{padding:18px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.025)}.platform-health-incident-warning{border-color:rgba(243,173,56,.25);background:rgba(243,173,56,.05)}.platform-health-incident-critical{border-color:rgba(213,0,28,.3);background:rgba(213,0,28,.07)}.platform-health-incident-top{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,.55);font-size:.78rem;text-transform:uppercase}.platform-health-severity{padding:3px 7px;border-radius:999px;font-weight:800}.platform-health-severity-info{background:rgba(255,255,255,.08);color:rgba(255,255,255,.65)}.platform-health-severity-warning{background:rgba(243,173,56,.13);color:#ffc66a}.platform-health-severity-critical{background:rgba(213,0,28,.15);color:#ff6575}.platform-health-incident h3{margin:9px 0 6px;color:#fff}.platform-health-incident p,.platform-health-incident div:not(.platform-health-incident-top){color:rgba(255,255,255,.64);line-height:1.55;font-size:.88rem}.platform-health-incident p{margin:0 0 8px}.platform-health-empty{padding:30px}.platform-health-card>.admin-header{margin-bottom:0}
 
 .platform-health-header-actions{display:flex;align-items:center;gap:8px}
+
+.google-maps-usage-card{display:flex;flex-direction:column;gap:24px}
+.google-maps-usage-toolbar{display:flex;justify-content:space-between;gap:24px;align-items:flex-start}
+.google-maps-usage-toolbar h2{margin:6px 0 6px}
+.google-maps-usage-toolbar p{margin:0;max-width:760px;color:var(--muted)}
+.segmented-control{display:flex;border:1px solid var(--border);border-radius:10px;overflow:hidden;flex-shrink:0}
+.segmented-control button{border:0;background:var(--surface);padding:9px 14px;font:inherit;color:var(--text);cursor:pointer}
+.segmented-control button+button{border-left:1px solid var(--border)}
+.segmented-control button.active{background:var(--text);color:var(--surface)}
+.google-maps-usage-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.google-maps-usage-metrics article{border:1px solid var(--border);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:5px;background:var(--surface)}
+.google-maps-usage-metrics span,.google-maps-usage-metrics small{color:var(--muted)}
+.google-maps-usage-metrics strong{font-size:26px}
+.google-maps-usage-table-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px}
+.google-maps-usage-table{width:100%;border-collapse:collapse;min-width:620px}
+.google-maps-usage-table th,.google-maps-usage-table td{padding:13px 15px;text-align:left;border-bottom:1px solid var(--border)}
+.google-maps-usage-table th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--surface-muted)}
+.google-maps-usage-table tr:last-child td{border-bottom:0}
+.google-maps-usage-bars{display:flex;flex-direction:column;gap:10px;border:1px solid var(--border);border-radius:12px;padding:16px}
+.google-maps-usage-bar-row{display:grid;grid-template-columns:70px 1fr 70px;gap:12px;align-items:center;font-size:13px}
+.google-maps-usage-bar-track{height:10px;background:var(--surface-muted);border-radius:999px;overflow:hidden}
+.google-maps-usage-bar{height:100%;background:var(--text);border-radius:999px}
+.google-maps-usage-note{display:flex;flex-direction:column;gap:5px;padding:15px 17px;border:1px solid var(--border);border-radius:12px;background:var(--surface-muted)}
+.google-maps-usage-note span{color:var(--muted);font-size:13px}
+@media (max-width:900px){
+  .google-maps-usage-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .google-maps-usage-toolbar{flex-direction:column}
+}
+@media (max-width:560px){
+  .google-maps-usage-metrics{grid-template-columns:1fr}
+  .google-maps-usage-bar-row{grid-template-columns:58px 1fr 55px}
+}
