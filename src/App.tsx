@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { supabase } from './lib/supabase';
 import PlatformHealthPage from './components/PlatformHealthPage';
+import GoogleMapsUsagePage from './components/GoogleMapsUsagePage';
 
-type AdminPage = 'dashboard' | 'restaurants' | 'audit' | 'administrators' | 'health';
+type AdminPage = 'dashboard' | 'restaurants' | 'audit' | 'administrators' | 'health' | 'maps';
 
 function isAdminPage(current: AdminPage, target: AdminPage) {
   return current === target;
@@ -291,10 +292,11 @@ function App() {
     if (page === 'audit') return { page: 'audit' as const, restaurantId: null, auditId };
     if (page === 'administrators') return { page: 'administrators' as const, restaurantId: null, auditId: null };
     if (page === 'health') return { page: 'health' as const, restaurantId: null, auditId: null };
+    if (page === 'maps') return { page: 'maps' as const, restaurantId: null, auditId: null };
     return { page: 'dashboard' as const, restaurantId: null, auditId: null };
   }
 
-  function pushNavigation(page: 'dashboard' | 'restaurants' | 'audit' | 'administrators' | 'health' | 'restaurant', options: { restaurantId?: string; auditId?: string } = {}) {
+  function pushNavigation(page: 'dashboard' | 'restaurants' | 'audit' | 'administrators' | 'health' | 'maps' | 'restaurant', options: { restaurantId?: string; auditId?: string } = {}) {
     const params = new URLSearchParams();
     params.set('page', page);
     if (options.restaurantId) params.set('restaurantId', options.restaurantId);
@@ -322,7 +324,9 @@ function App() {
     setSelectedRestaurant(null);
     setAdminPage(navigation.page === 'restaurant' ? 'restaurants' : navigation.page);
 
-    if (navigation.page === 'dashboard') {
+    if (navigation.page === 'maps') {
+      setAdminPage('maps');
+    } else if (navigation.page === 'dashboard') {
       void loadDashboard();
     } else if (navigation.page === 'restaurants') {
       void loadRestaurants();
@@ -340,6 +344,14 @@ function App() {
     setSelectedRestaurant(null);
     setSelectedAuditLog(null);
     setAdminPage('health');
+  }
+
+  function openGoogleMapsUsage(pushHistory = true) {
+    if (pushHistory) pushNavigation('maps');
+    setAccountMenuOpen(false);
+    setSelectedRestaurant(null);
+    setSelectedAuditLog(null);
+    setAdminPage('maps');
   }
 
   function openAdministrators(pushHistory = true) {
@@ -1409,6 +1421,10 @@ function App() {
     return <PlatformHealthPage onBack={() => openDashboard()} />;
   }
 
+  if (isAdminPage(adminPage, 'maps')) {
+    return <GoogleMapsUsagePage onBack={() => openDashboard()} />;
+  }
+
   if (isAdminPage(adminPage, 'dashboard')) {
     return (
       <main className="admin-shell">
@@ -1429,6 +1445,9 @@ function App() {
             </button>
             <button className={isAdminPage(adminPage, 'health') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openPlatformHealth()} title="Platform Health" aria-label="Platform Health">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h4l2-6 4 12 2-6h4"/><path d="M4 20h16"/></svg>
+            </button>
+            <button className={isAdminPage(adminPage, 'maps') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openGoogleMapsUsage()} title="Google Maps Usage" aria-label="Google Maps Usage">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"/><circle cx="12" cy="9" r="2.3"/></svg>
             </button>
             <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
               <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.8-3.3 3.2-5 6.5-5s5.7 1.7 6.5 5"/></svg>
