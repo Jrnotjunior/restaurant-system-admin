@@ -915,7 +915,11 @@ function App() {
       return;
     }
 
-    setInviteTenantSuccess(`Restaurant "${restaurantName}" was created and package ${packageId} was assigned. Invitation sent to ${email}.`);
+    if (data?.resent) {
+      setInviteTenantSuccess(`A fresh tenant access link was sent to ${email}. The existing account and restaurant were kept.`);
+    } else {
+      setInviteTenantSuccess(`Restaurant "${restaurantName}" was created and package ${packageId} was assigned. Invitation sent to ${email}.`);
+    }
     setInviteTenantEmail('');
     setInviteTenantRestaurantName('');
     setInviteTenantSlug('');
