@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from './lib/supabase';
 import PlatformHealthPage from './components/PlatformHealthPage';
 import MapboxUsagePage from './components/MapboxUsagePage';
@@ -2120,7 +2121,11 @@ function App() {
               {canManage && <button className="secondary-button" type="button" onClick={() => startEdit(selectedRestaurant)}>
                 Edit restaurant
               </button>}
-              {canManage && <button className="danger-button" type="button" onClick={() => requestDeleteRestaurant(selectedRestaurant)}>
+              {canManage && <button className="danger-button" type="button" onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                requestDeleteRestaurant(selectedRestaurant);
+              }}>
                 Delete restaurant
               </button>}
             </div>
@@ -2514,7 +2519,7 @@ function App() {
             </div>
           )}
 
-          {pendingDeleteRestaurant && (
+          {pendingDeleteRestaurant && createPortal(
             <div className="modal-backdrop restaurant-delete-confirm-backdrop" role="presentation">
               <section className="modal-card restaurant-delete-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="restaurant-delete-title">
                 <div className="modal-heading">
@@ -2540,6 +2545,7 @@ function App() {
                 </div>
               </section>
             </div>
+            document.body,
           )}
 
           {pendingSaveDomain && (
@@ -2861,9 +2867,13 @@ function App() {
                   {canManage && <button className={restaurant.is_active ? 'danger-button' : 'secondary-button'} onClick={() => setPendingRestaurantStatus(restaurant)}>
                     {restaurant.is_active ? 'Deactivate' : 'Activate'}
                   </button>}
-                  {canManage && <button type="button" className="danger-button" onClick={() => requestDeleteRestaurant(restaurant)}>
-                    Delete
-                  </button>}
+                  {canManage && <button type="button" className="danger-button" onClick={(event) => {
+                     event.preventDefault();
+                     event.stopPropagation();
+                     requestDeleteRestaurant(restaurant);
+                   }}>
+                     Delete
+                   </button>}
                 </div>
               </article>
             ))}
