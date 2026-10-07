@@ -2028,12 +2028,33 @@ function App() {
     setRestaurantError('');
 
     try {
-      const { error } = await supabase.rpc('system_admin_delete_restaurant', {
-        p_restaurant_id: restaurant.id,
+      const { data, error } = await supabase.functions.invoke('system-admin-delete-restaurant', {
+        body: {
+          restaurant_id: restaurant.id,
+        },
       });
 
       if (error) {
-        setRestaurantError(error.message);
+        let message = error.message;
+
+        try {
+          const response = (error as { context?: Response }).context;
+          if (response) {
+            const responseBody = await response.clone().json() as { error?: unknown };
+            if (typeof responseBody.error === 'string' && responseBody.error.trim()) {
+              message = responseBody.error;
+            }
+          }
+        } catch {
+          // Keep the original FunctionsHttpError message when the response body cannot be parsed.
+        }
+
+        setRestaurantError(message);
+        return;
+      }
+
+      if (data?.error) {
+        setRestaurantError(String(data.error));
         return;
       }
 
