@@ -2933,7 +2933,8 @@ function App() {
 
             <form className="restaurant-form" onSubmit={inviteTenant}>
               <p>
-                Create the restaurant tenant, assign its package, and send the owner their setup invitation.
+                For a new tenant, enter the restaurant details below. For an existing tenant owner,
+                enter the email only to resend secure access without creating a duplicate restaurant.
               </p>
 
               <div className="form-grid">
@@ -2942,8 +2943,7 @@ function App() {
                   <input
                     value={inviteTenantRestaurantName}
                     onChange={(event) => setInviteTenantRestaurantName(event.target.value)}
-                    placeholder="My Restaurant"
-                    required
+                    placeholder="Required for a new tenant"
                     disabled={inviteTenantSaving}
                   />
                 </label>
@@ -2956,7 +2956,6 @@ function App() {
                     placeholder="my-restaurant"
                     pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
                     title="Use lowercase letters, numbers, and single hyphens."
-                    required
                     disabled={inviteTenantSaving}
                   />
                 </label>
