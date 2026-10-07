@@ -146,6 +146,8 @@ function App() {
   const [pendingAssignOwner, setPendingAssignOwner] = useState(false);
   const [pendingRemoveOwner, setPendingRemoveOwner] = useState(false);
   const [pendingRestaurantStatus, setPendingRestaurantStatus] = useState<Restaurant | null>(null);
+  const [pendingDeleteRestaurant, setPendingDeleteRestaurant] = useState<Restaurant | null>(null);
+  const [restaurantDeleteSaving, setRestaurantDeleteSaving] = useState(false);
   const [pendingRestaurantFormSave, setPendingRestaurantFormSave] = useState(false);
   const [adminPage, setAdminPage] = useState<AdminPage>('dashboard');
   const [dashboardLoading, setDashboardLoading] = useState(false);
@@ -2011,6 +2013,44 @@ function App() {
     await loadRestaurants();
   }
 
+  async function confirmDeleteRestaurant() {
+    if (!pendingDeleteRestaurant || restaurantDeleteSaving) return;
+
+    const restaurant = pendingDeleteRestaurant;
+    setRestaurantDeleteSaving(true);
+    setRestaurantError('');
+
+    const { error } = await supabase.rpc('system_admin_delete_restaurant', {
+      p_restaurant_id: restaurant.id,
+    });
+
+    if (error) {
+      setRestaurantError(error.message);
+      setRestaurantDeleteSaving(false);
+      return;
+    }
+
+    await recordAdminAudit(
+      'Restaurant deleted',
+      null,
+      'restaurant',
+      restaurant.id,
+      {
+        name: restaurant.name,
+        slug: restaurant.slug,
+        owner_id: restaurant.owner_id,
+      },
+    );
+
+    if (selectedRestaurant?.id === restaurant.id) {
+      closeRestaurant(false);
+    }
+
+    setPendingDeleteRestaurant(null);
+    setRestaurantDeleteSaving(false);
+    await loadRestaurants();
+  }
+
   if (selectedRestaurant) {
     return (
       <main className="admin-shell">
@@ -2071,6 +2111,9 @@ function App() {
               </span>
               {canManage && <button className="secondary-button" type="button" onClick={() => startEdit(selectedRestaurant)}>
                 Edit restaurant
+              </button>}
+              {canManage && <button className="danger-button" type="button" onClick={() => setPendingDeleteRestaurant(selectedRestaurant)}>
+                Delete restaurant
               </button>}
             </div>
           </div>
@@ -2463,6 +2506,34 @@ function App() {
             </div>
           )}
 
+          {pendingDeleteRestaurant && (
+            <div className="modal-backdrop restaurant-delete-confirm-backdrop" role="presentation">
+              <section className="modal-card restaurant-delete-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="restaurant-delete-title">
+                <div className="modal-heading">
+                  <div>
+                    <div className="eyebrow">Delete Restaurant</div>
+                    <h2 id="restaurant-delete-title">Delete this restaurant?</h2>
+                  </div>
+                  <button className="icon-button" type="button" onClick={() => setPendingDeleteRestaurant(null)} disabled={restaurantDeleteSaving} aria-label="Close">×</button>
+                </div>
+                <div className="restaurant-delete-confirm-content">
+                  <p>You are about to permanently delete <strong>{pendingDeleteRestaurant.name}</strong>.</p>
+                  <div className="restaurant-delete-confirm-warning">
+                    <strong>This removes the restaurant from the platform and deletes its tenant owner Auth account when that account is no longer used by another restaurant or invitation.</strong>
+                    <span>This action cannot be undone. Restaurants with existing orders or pending online payments will be blocked from deletion.</span>
+                  </div>
+                  {restaurantError && <div className="error-banner">{restaurantError}</div>}
+                </div>
+                <div className="modal-actions">
+                  <button type="button" className="secondary-button" onClick={() => setPendingDeleteRestaurant(null)} disabled={restaurantDeleteSaving}>Cancel</button>
+                  <button type="button" className="danger-button" onClick={() => void confirmDeleteRestaurant()} disabled={restaurantDeleteSaving}>
+                    {restaurantDeleteSaving ? 'Deleting...' : 'Confirm & Delete'}
+                  </button>
+                </div>
+              </section>
+            </div>
+          )}
+
           {pendingSaveDomain && (
             <div className="modal-backdrop domain-confirm-backdrop" role="presentation">
               <section className="modal-card domain-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="save-domain-title">
@@ -2782,6 +2853,9 @@ function App() {
                   {canManage && <button className={restaurant.is_active ? 'danger-button' : 'secondary-button'} onClick={() => setPendingRestaurantStatus(restaurant)}>
                     {restaurant.is_active ? 'Deactivate' : 'Activate'}
                   </button>}
+                  {canManage && <button className="danger-button" onClick={() => setPendingDeleteRestaurant(restaurant)}>
+                    Delete
+                  </button>
                 </div>
               </article>
             ))}
