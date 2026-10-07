@@ -2013,6 +2013,11 @@ function App() {
     await loadRestaurants();
   }
 
+  function requestDeleteRestaurant(restaurant: Restaurant) {
+    setRestaurantError('');
+    setPendingDeleteRestaurant(restaurant);
+  }
+
   async function confirmDeleteRestaurant() {
     if (!pendingDeleteRestaurant || restaurantDeleteSaving) return;
 
@@ -2112,7 +2117,7 @@ function App() {
               {canManage && <button className="secondary-button" type="button" onClick={() => startEdit(selectedRestaurant)}>
                 Edit restaurant
               </button>}
-              {canManage && <button className="danger-button" type="button" onClick={() => setPendingDeleteRestaurant(selectedRestaurant)}>
+              {canManage && <button className="danger-button" type="button" onClick={() => requestDeleteRestaurant(selectedRestaurant)}>
                 Delete restaurant
               </button>}
             </div>
@@ -2853,7 +2858,7 @@ function App() {
                   {canManage && <button className={restaurant.is_active ? 'danger-button' : 'secondary-button'} onClick={() => setPendingRestaurantStatus(restaurant)}>
                     {restaurant.is_active ? 'Deactivate' : 'Activate'}
                   </button>}
-                  {canManage && <button className="danger-button" onClick={() => setPendingDeleteRestaurant(restaurant)}>
+                  {canManage && <button type="button" className="danger-button" onClick={() => requestDeleteRestaurant(restaurant)}>
                     Delete
                   </button>}
                 </div>
