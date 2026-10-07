@@ -876,8 +876,8 @@ function App() {
     const slug = inviteTenantSlug.trim().toLowerCase();
     const packageId = Number(inviteTenantPackageId);
 
-    if (!email || !restaurantName || !slug || !Number.isInteger(packageId) || packageId < 1) {
-      setInviteTenantError('Restaurant name, slug, package, and owner email are required.');
+    if (!email) {
+      setInviteTenantError('Owner email is required.');
       setInviteTenantSaving(false);
       return;
     }
