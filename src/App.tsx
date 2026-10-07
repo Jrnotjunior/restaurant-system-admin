@@ -2939,7 +2939,7 @@ function App() {
             <form className="restaurant-form" onSubmit={inviteTenant}>
               <p>
                 For a new tenant, enter the restaurant details below. For an existing tenant owner,
-                enter the email only to resend secure access without creating a duplicate restaurant.
+                enter the email only to generate a secure one-time access link without creating a duplicate restaurant.
               </p>
 
               <div className="form-grid">
@@ -3008,7 +3008,7 @@ function App() {
                     </a>
                   </div>
                   <small style={{ display: 'block', marginTop: 8 }}>
-                    This link was generated directly by Supabase and was not sent through the email provider.
+                    This one-time link was generated directly by Supabase. Open it to sign in to the existing restaurant owner account.
                   </small>
                 </div>
               )}
@@ -3023,7 +3023,7 @@ function App() {
                   Close
                 </button>
                 <button type="submit" disabled={inviteTenantSaving}>
-                  {inviteTenantSaving ? 'Sending invitation...' : 'Send invitation'}
+                  {inviteTenantSaving ? 'Generating secure access...' : 'Generate secure access'}
                 </button>
               </div>
             </form>
