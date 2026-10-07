@@ -923,7 +923,10 @@ function App() {
         : `A fresh tenant access link was sent to ${email}. The existing account and restaurant were kept.`);
       if (data?.manual_access_link) setInviteTenantManualAccessLink(String(data.manual_access_link));
     } else {
-      setInviteTenantSuccess(`Restaurant "${restaurantName}" was created and package ${packageId} was assigned. Invitation sent to ${email}.`);
+      setInviteTenantSuccess(data?.manual_access_link
+        ? `Restaurant "${restaurantName}" was created and package ${packageId} was assigned. One secure invitation link is ready for ${email}.`
+        : `Restaurant "${restaurantName}" was created and package ${packageId} was assigned.`);
+      if (data?.manual_access_link) setInviteTenantManualAccessLink(String(data.manual_access_link));
     }
     setInviteTenantEmail('');
     setInviteTenantRestaurantName('');
@@ -3004,11 +3007,11 @@ function App() {
                   <strong>Secure access ready.</strong>
                   <div style={{ marginTop: 8 }}>
                     <a href={inviteTenantManualAccessLink} target="_blank" rel="noopener noreferrer">
-                      Open tenant access link
+                      Open invitation link
                     </a>
                   </div>
                   <small style={{ display: 'block', marginTop: 8 }}>
-                    This one-time link was generated directly by Supabase. Open it to sign in to the existing restaurant owner account.
+                    This is the single one-time invitation link. Copy/share it with the tenant. Do not open it yourself, because opening it consumes the invitation.
                   </small>
                 </div>
               )}
@@ -3023,7 +3026,7 @@ function App() {
                   Close
                 </button>
                 <button type="submit" disabled={inviteTenantSaving}>
-                  {inviteTenantSaving ? 'Generating secure access...' : 'Generate secure access'}
+                  {inviteTenantSaving ? 'Creating invitation...' : 'Create one invitation'}
                 </button>
               </div>
             </form>
