@@ -2855,7 +2855,7 @@ function App() {
                   </button>}
                   {canManage && <button className="danger-button" onClick={() => setPendingDeleteRestaurant(restaurant)}>
                     Delete
-                  </button>
+                  </button>}
                 </div>
               </article>
             ))}
