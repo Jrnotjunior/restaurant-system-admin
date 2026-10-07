@@ -85,7 +85,6 @@ function App() {
   const [inviteTenantSaving, setInviteTenantSaving] = useState(false);
   const [inviteTenantError, setInviteTenantError] = useState('');
   const [inviteTenantSuccess, setInviteTenantSuccess] = useState('');
-  const [inviteTenantManualAccessLink, setInviteTenantManualAccessLink] = useState('');
   const [inviteSetup, setInviteSetup] = useState(false);
   const [invitePassword, setInvitePassword] = useState('');
   const [invitePasswordConfirm, setInvitePasswordConfirm] = useState('');
@@ -871,7 +870,6 @@ function App() {
     setInviteTenantSaving(true);
     setInviteTenantError('');
     setInviteTenantSuccess('');
-    setInviteTenantManualAccessLink('');
 
     const email = inviteTenantEmail.trim().toLowerCase();
     const restaurantName = inviteTenantRestaurantName.trim();
@@ -917,17 +915,9 @@ function App() {
       return;
     }
 
-    if (data?.resent) {
-      setInviteTenantSuccess(data?.manual_access_link
-        ? `A secure tenant access link was generated for ${email}. The existing account and restaurant were kept.`
-        : `A fresh tenant access link was sent to ${email}. The existing account and restaurant were kept.`);
-      if (data?.manual_access_link) setInviteTenantManualAccessLink(String(data.manual_access_link));
-    } else {
-      setInviteTenantSuccess(data?.manual_access_link
-        ? `Restaurant "${restaurantName}" was created and package ${packageId} was assigned. One secure invitation link is ready for ${email}.`
-        : `Restaurant "${restaurantName}" was created and package ${packageId} was assigned.`);
-      if (data?.manual_access_link) setInviteTenantManualAccessLink(String(data.manual_access_link));
-    }
+    setInviteTenantSuccess(
+      `Restaurant "${restaurantName}" was created and package ${packageId} was assigned. The invitation email was sent to ${email}.`,
+    );
     setInviteTenantEmail('');
     setInviteTenantRestaurantName('');
     setInviteTenantSlug('');
@@ -2941,8 +2931,8 @@ function App() {
 
             <form className="restaurant-form" onSubmit={inviteTenant}>
               <p>
-                For a new tenant, enter the restaurant details below. For an existing tenant owner,
-                enter the email only to generate a secure one-time access link without creating a duplicate restaurant.
+                Enter the new restaurant details and owner email. Web2Table will create the tenant
+                and automatically send the owner a secure invitation email.
               </p>
 
               <div className="form-grid">
@@ -3002,20 +2992,6 @@ function App() {
 
               {inviteTenantError && <div className="error-banner">{inviteTenantError}</div>}
               {inviteTenantSuccess && <div className="success-banner">{inviteTenantSuccess}</div>}
-              {inviteTenantManualAccessLink && (
-                <div className="success-banner" style={{ marginTop: 12 }}>
-                  <strong>Secure access ready.</strong>
-                  <div style={{ marginTop: 8 }}>
-                    <a href={inviteTenantManualAccessLink} target="_blank" rel="noopener noreferrer">
-                      Open invitation link
-                    </a>
-                  </div>
-                  <small style={{ display: 'block', marginTop: 8 }}>
-                    This is the single one-time invitation link. Copy/share it with the tenant. Do not open it yourself, because opening it consumes the invitation.
-                  </small>
-                </div>
-              )}
-
               <div className="modal-actions">
                 <button
                   type="button"
@@ -3026,7 +3002,7 @@ function App() {
                   Close
                 </button>
                 <button type="submit" disabled={inviteTenantSaving}>
-                  {inviteTenantSaving ? 'Creating invitation...' : 'Create one invitation'}
+                  {inviteTenantSaving ? 'Sending invitation...' : 'Invite tenant'}
                 </button>
               </div>
             </form>
