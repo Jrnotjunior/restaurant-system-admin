@@ -2013,15 +2013,16 @@ function App() {
     await loadRestaurants();
   }
 
-  async function requestDeleteRestaurant(restaurant: Restaurant) {
+  function requestDeleteRestaurant(restaurant: Restaurant) {
     if (restaurantDeleteSaving) return;
+    setRestaurantError('');
+    setPendingDeleteRestaurant(restaurant);
+  }
 
-    const confirmed = window.confirm(
-      `Delete "${restaurant.name}" permanently?\\n\\nThis removes the restaurant from the platform. Its tenant owner Auth account will also be deleted when that account is no longer used by another restaurant or invitation.\\n\\nRestaurants with existing orders or pending online payments cannot be deleted.`,
-    );
+  async function confirmDeleteRestaurant() {
+    if (!pendingDeleteRestaurant || restaurantDeleteSaving) return;
 
-    if (!confirmed) return;
-
+    const restaurant = pendingDeleteRestaurant;
     setRestaurantDeleteSaving(true);
     setRestaurantError('');
 
@@ -2056,44 +2057,6 @@ function App() {
     } finally {
       setRestaurantDeleteSaving(false);
     }
-  }
-
-  async function confirmDeleteRestaurant() {
-    if (!pendingDeleteRestaurant || restaurantDeleteSaving) return;
-
-    const restaurant = pendingDeleteRestaurant;
-    setRestaurantDeleteSaving(true);
-    setRestaurantError('');
-
-    const { error } = await supabase.rpc('system_admin_delete_restaurant', {
-      p_restaurant_id: restaurant.id,
-    });
-
-    if (error) {
-      setRestaurantError(error.message);
-      setRestaurantDeleteSaving(false);
-      return;
-    }
-
-    await recordAdminAudit(
-      'Restaurant deleted',
-      null,
-      'restaurant',
-      restaurant.id,
-      {
-        name: restaurant.name,
-        slug: restaurant.slug,
-        owner_id: restaurant.owner_id,
-      },
-    );
-
-    if (selectedRestaurant?.id === restaurant.id) {
-      closeRestaurant(false);
-    }
-
-    setPendingDeleteRestaurant(null);
-    setRestaurantDeleteSaving(false);
-    await loadRestaurants();
   }
 
   if (selectedRestaurant) {
@@ -2157,7 +2120,7 @@ function App() {
               {canManage && <button className="secondary-button" type="button" onClick={() => startEdit(selectedRestaurant)}>
                 Edit restaurant
               </button>}
-              {canManage && <button className="danger-button" type="button" onClick={() => void requestDeleteRestaurant(selectedRestaurant)}>
+              {canManage && <button className="danger-button" type="button" onClick={() => requestDeleteRestaurant(selectedRestaurant)}>
                 Delete restaurant
               </button>}
             </div>
@@ -2898,7 +2861,7 @@ function App() {
                   {canManage && <button className={restaurant.is_active ? 'danger-button' : 'secondary-button'} onClick={() => setPendingRestaurantStatus(restaurant)}>
                     {restaurant.is_active ? 'Deactivate' : 'Activate'}
                   </button>}
-                  {canManage && <button type="button" className="danger-button" onClick={() => void requestDeleteRestaurant(restaurant)}>
+                  {canManage && <button type="button" className="danger-button" onClick={() => requestDeleteRestaurant(restaurant)}>
                     Delete
                   </button>}
                 </div>
