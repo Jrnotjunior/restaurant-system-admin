@@ -2519,34 +2519,7 @@ function App() {
             </div>
           )}
 
-          {pendingDeleteRestaurant && createPortal(
-            <div className="modal-backdrop restaurant-delete-confirm-backdrop" role="presentation">
-              <section className="modal-card restaurant-delete-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="restaurant-delete-title">
-                <div className="modal-heading">
-                  <div>
-                    <div className="eyebrow">Delete Restaurant</div>
-                    <h2 id="restaurant-delete-title">Delete this restaurant?</h2>
-                  </div>
-                  <button className="icon-button" type="button" onClick={() => setPendingDeleteRestaurant(null)} disabled={restaurantDeleteSaving} aria-label="Close">×</button>
-                </div>
-                <div className="restaurant-delete-confirm-content">
-                  <p>You are about to permanently delete <strong>{pendingDeleteRestaurant.name}</strong>.</p>
-                  <div className="restaurant-delete-confirm-warning">
-                    <strong>This removes the restaurant from the platform and deletes its tenant owner Auth account when that account is no longer used by another restaurant or invitation.</strong>
-                    <span>This action cannot be undone. Restaurants with existing orders or pending online payments will be blocked from deletion.</span>
-                  </div>
-                  {restaurantError && <div className="error-banner">{restaurantError}</div>}
-                </div>
-                <div className="modal-actions">
-                  <button type="button" className="secondary-button" onClick={() => setPendingDeleteRestaurant(null)} disabled={restaurantDeleteSaving}>Cancel</button>
-                  <button type="button" className="danger-button" onClick={() => void confirmDeleteRestaurant()} disabled={restaurantDeleteSaving}>
-                    {restaurantDeleteSaving ? 'Deleting...' : 'Confirm & Delete'}
-                  </button>
-                </div>
-              </section>
-            </div>,
-            document.body,
-          )}
+          {renderRestaurantDeleteModal()}
 
           {pendingSaveDomain && (
             <div className="modal-backdrop domain-confirm-backdrop" role="presentation">
@@ -2880,6 +2853,8 @@ function App() {
           </div>
         )}
       </section>
+
+      {renderRestaurantDeleteModal()}
 
       {showInviteTenant && (
         <div className="modal-backdrop" role="presentation">
