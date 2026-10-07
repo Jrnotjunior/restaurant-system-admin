@@ -158,3 +158,25 @@ input{width:100%;margin-top:.4rem;border:1px solid rgba(255,255,255,.14);border-
   .google-maps-usage-metrics{grid-template-columns:1fr}
   .google-maps-usage-bar-row{grid-template-columns:58px 1fr 55px}
 }
+
+.mapbox-usage-card{display:flex;flex-direction:column;gap:24px}
+.mapbox-usage-toolbar{display:flex;justify-content:space-between;gap:24px;align-items:flex-start}
+.mapbox-usage-toolbar h2{margin:6px 0 6px;color:#fff}
+.mapbox-usage-toolbar p{margin:0;max-width:760px;color:rgba(255,255,255,.64);line-height:1.6}
+.mapbox-usage-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.mapbox-usage-metrics article{border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:5px;background:rgba(255,255,255,.025)}
+.mapbox-usage-metrics span,.mapbox-usage-metrics small{color:rgba(255,255,255,.48)}
+.mapbox-usage-metrics strong{font-size:26px;color:#fff}
+.mapbox-usage-table-wrap{overflow:auto;border:1px solid rgba(255,255,255,.08);border-radius:12px}
+.mapbox-usage-table{width:100%;border-collapse:collapse;min-width:620px}
+.mapbox-usage-table th,.mapbox-usage-table td{padding:13px 15px;text-align:left;border-bottom:1px solid rgba(255,255,255,.07)}
+.mapbox-usage-table th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,.45);background:rgba(255,255,255,.025)}
+.mapbox-usage-table tr:last-child td{border-bottom:0}
+.mapbox-usage-bars{display:flex;flex-direction:column;gap:10px;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px}
+.mapbox-usage-bar-row{display:grid;grid-template-columns:70px 1fr 70px;gap:12px;align-items:center;font-size:13px;color:rgba(255,255,255,.78)}
+.mapbox-usage-bar-track{height:10px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden}
+.mapbox-usage-bar{height:100%;background:#fff;border-radius:999px}
+.mapbox-usage-note{display:flex;flex-direction:column;gap:5px;padding:15px 17px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.025)}
+.mapbox-usage-note span{color:rgba(255,255,255,.55);font-size:13px;line-height:1.5}
+@media (max-width:900px){.mapbox-usage-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.mapbox-usage-toolbar{flex-direction:column}}
+@media (max-width:560px){.mapbox-usage-metrics{grid-template-columns:1fr}.mapbox-usage-bar-row{grid-template-columns:58px 1fr 55px}}
