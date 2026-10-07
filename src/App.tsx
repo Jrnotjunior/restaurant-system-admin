@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { supabase } from './lib/supabase';
 import PlatformHealthPage from './components/PlatformHealthPage';
-import GoogleMapsUsagePage from './components/GoogleMapsUsagePage';
+import MapboxUsagePage from './components/MapboxUsagePage';
 
 type AdminPage = 'dashboard' | 'restaurants' | 'audit' | 'administrators' | 'health' | 'maps';
 
@@ -346,7 +346,7 @@ function App() {
     setAdminPage('health');
   }
 
-  function openGoogleMapsUsage(pushHistory = true) {
+  function openMapboxUsage(pushHistory = true) {
     if (pushHistory) pushNavigation('maps');
     setAccountMenuOpen(false);
     setSelectedRestaurant(null);
@@ -1422,7 +1422,7 @@ function App() {
   }
 
   if (isAdminPage(adminPage, 'maps')) {
-    return <GoogleMapsUsagePage onBack={() => openDashboard()} />;
+    return <MapboxUsagePage onBack={() => openDashboard()} />;
   }
 
   if (isAdminPage(adminPage, 'dashboard')) {
@@ -1446,7 +1446,7 @@ function App() {
             <button className={isAdminPage(adminPage, 'health') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openPlatformHealth()} title="Platform Health" aria-label="Platform Health">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h4l2-6 4 12 2-6h4"/><path d="M4 20h16"/></svg>
             </button>
-            <button className={isAdminPage(adminPage, 'maps') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openGoogleMapsUsage()} title="Google Maps Usage" aria-label="Google Maps Usage">
+            <button className={isAdminPage(adminPage, 'maps') ? 'admin-icon-button active' : 'admin-icon-button'} onClick={() => openMapboxUsage()} title="Mapbox Usage" aria-label="Mapbox Usage">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"/><circle cx="12" cy="9" r="2.3"/></svg>
             </button>
             <button className="admin-icon-button" onClick={() => setAccountMenuOpen((open) => !open)} title="Account" aria-label="Account">
