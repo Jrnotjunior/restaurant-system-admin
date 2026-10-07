@@ -85,6 +85,7 @@ function App() {
   const [inviteTenantSaving, setInviteTenantSaving] = useState(false);
   const [inviteTenantError, setInviteTenantError] = useState('');
   const [inviteTenantSuccess, setInviteTenantSuccess] = useState('');
+  const [inviteTenantManualAccessLink, setInviteTenantManualAccessLink] = useState('');
   const [inviteSetup, setInviteSetup] = useState(false);
   const [invitePassword, setInvitePassword] = useState('');
   const [invitePasswordConfirm, setInvitePasswordConfirm] = useState('');
@@ -870,6 +871,7 @@ function App() {
     setInviteTenantSaving(true);
     setInviteTenantError('');
     setInviteTenantSuccess('');
+    setInviteTenantManualAccessLink('');
 
     const email = inviteTenantEmail.trim().toLowerCase();
     const restaurantName = inviteTenantRestaurantName.trim();
@@ -916,7 +918,10 @@ function App() {
     }
 
     if (data?.resent) {
-      setInviteTenantSuccess(`A fresh tenant access link was sent to ${email}. The existing account and restaurant were kept.`);
+      setInviteTenantSuccess(data?.manual_access_link
+        ? `A secure tenant access link was generated for ${email}. The existing account and restaurant were kept.`
+        : `A fresh tenant access link was sent to ${email}. The existing account and restaurant were kept.`);
+      if (data?.manual_access_link) setInviteTenantManualAccessLink(String(data.manual_access_link));
     } else {
       setInviteTenantSuccess(`Restaurant "${restaurantName}" was created and package ${packageId} was assigned. Invitation sent to ${email}.`);
     }
@@ -2994,6 +2999,19 @@ function App() {
 
               {inviteTenantError && <div className="error-banner">{inviteTenantError}</div>}
               {inviteTenantSuccess && <div className="success-banner">{inviteTenantSuccess}</div>}
+              {inviteTenantManualAccessLink && (
+                <div className="success-banner" style={{ marginTop: 12 }}>
+                  <strong>Secure access ready.</strong>
+                  <div style={{ marginTop: 8 }}>
+                    <a href={inviteTenantManualAccessLink} target="_blank" rel="noopener noreferrer">
+                      Open tenant access link
+                    </a>
+                  </div>
+                  <small style={{ display: 'block', marginTop: 8 }}>
+                    This link was generated directly by Supabase and was not sent through the email provider.
+                  </small>
+                </div>
+              )}
 
               <div className="modal-actions">
                 <button
